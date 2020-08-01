@@ -1,5 +1,5 @@
 import pandas as pd
-from .models import RegData
+from .models import RegData, FileMetaData
 import numpy as np
 from sklearn.base import TransformerMixin
 
@@ -41,6 +41,13 @@ def handle_uploaded_file(f, y, tick):
 
 def load_file_into_db(x, y, title):
     l = []
-    for col1, col2 in zip(x['data'], list(y.values())):
-        l.append(RegData(x=col1, y=col2, filename=title))
+    for col1, col2 in zip(x, list(y.values())):
+        l.append(RegData(x=col1, y=col2,
+                         project_name=FileMetaData.objects.get(project_name=title)))
     RegData.objects.bulk_create(l)
+
+
+def load_file_metadata(x_colnames, y_colname, title):
+    FileMetaData(col_names=x_colnames,
+                 y_name=y_colname,
+                 project_name=title).save()

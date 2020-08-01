@@ -1,20 +1,21 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import UploadFileForm
-from .utils import handle_uploaded_file, load_file_into_db
+from .utils import *
 
 
 # Create your views here.
 def upload_file(request):
     if request.method == 'POST':
-        print(request.FILES)
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             y_field = form.cleaned_data.get('y')
             title = form.cleaned_data.get('title')
             tick = form.cleaned_data.get('tick')
             d_x, d_y = handle_uploaded_file(request.FILES['file'], y_field, tick)
-            load_file_into_db(d_x, d_y, title)
+            # TODO: check why doesn't throw error when project name exists
+            load_file_metadata(d_x['columns'], y_field, title)
+            load_file_into_db(d_x['data'], d_y, title)
             return HttpResponseRedirect('/results/')
         else:
             print('Error on form: ', form.errors)
