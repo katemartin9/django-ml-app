@@ -1,10 +1,8 @@
 import pandas as pd
 from .models import RegData, FileMetaData
-import numpy as np
-from sklearn.base import TransformerMixin
 
 
-class DataFrameImputer(TransformerMixin):
+class DataFrameImputer():
 
     def __init__(self):
         """Impute missing values.
@@ -12,26 +10,27 @@ class DataFrameImputer(TransformerMixin):
         in column.
         Columns of other types are imputed with mean of column.
         """
-        self.fill = None
+        self.df = None
 
-    def fit(self, X, y=None):
-        self.fill = pd.Series([X[c].value_counts().index[0]
-            if X[c].dtype == np.dtype('O') else X[c].mean() for c in X],
-            index=X.columns)
+    def res(self, X):
+        self.df = X.copy()
+        for col in X:
+            if X[col].dtype == float or X[col].dtype == int:
+                self.df[col] = self.df[col].fillna(self.df[col].median())
+            else:
+                self.df[col] = self.df[col].fillna(self.df[col].mode().iloc[0])
         return self
-
-    def transform(self, X, y=None):
-        return X.fillna(self.fill)
 
 
 def handle_uploaded_file(f, y, tick):
     y = y.lower()
     df = pd.read_csv(f)
     df.columns = [x.lower() for x in df.columns]
+    # TODO: if more than 80% of data are null then drop column
     if tick:
         df.dropna(inplace=True)
     else:
-        DataFrameImputer().fit_transform(df)
+        df = DataFrameImputer().res(df).df
     cols = list(df.columns)
     cols.remove(y)
     d_y = df[y].to_dict()
