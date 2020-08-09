@@ -66,8 +66,7 @@ def plot_regression_results(ax, y_true, y_pred, scores, name, elapsed_time):
     ax.set_title(title)
 
 
-def handle_uploaded_file(f, y, tick):
-    y = y.lower()
+def handle_uploaded_file(f, tick):
     df = pd.read_csv(f)
     df.columns = [x.lower() for x in df.columns]
     # TODO: if more than 80% of data are null then drop column
@@ -75,22 +74,16 @@ def handle_uploaded_file(f, y, tick):
         df.dropna(inplace=True)
     else:
         df = DataFrameImputer().res(df).df
-    cols = list(df.columns)
-    cols.remove(y)
-    d_y = df[y].to_dict()
-    d_x = df[cols].to_dict('split')
-    return d_x, d_y
+    return df.to_dict(orient='records')
 
 
-def load_file_into_db(x, y, title):
-    l = []
-    for col1, col2 in zip(x, list(y.values())):
-        l.append(RegData(x=col1, y=col2,
-                         project_name=FileMetaData.objects.get(project_name=title)))
-    RegData.objects.bulk_create(l)
+def load_file_into_db(data, title, user):
+    iter_data = []
+    FileMetaData(project_name=title, user=user).save()
+    for row in data:
+        iter_data.append(RegData(observations=row,
+                                 project_name=FileMetaData.objects.get(project_name=
+                                                                       title)))
+    RegData.objects.bulk_create(iter_data)
 
 
-def load_file_metadata(x_colnames, y_colname, title):
-    FileMetaData(col_names=x_colnames,
-                 y_name=y_colname,
-                 project_name=title).save()
