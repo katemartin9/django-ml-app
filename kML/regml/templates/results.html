@@ -2,8 +2,21 @@
 <html lang="en">
 <link href="https://getbootstrap.com/docs/4.4/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-    th, td {
-  padding: 5px;
+.form-field label {
+    width: 10%;
+    float: left;
+    margin-left: 5%;
+}
+input[type=submit] {
+  background-color: #D3D3D3;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-decoration: none;
+  cursor: pointer;
+    margin-left: 5%;
+    float: left;
+    width: 25%;
 }
 </style>
     <head>
@@ -15,10 +28,16 @@
     {% autoescape off %}
     {{ table }}
     {% endautoescape %}
+
     {% for form in forms %}
         {% csrf_token %}
+        <div class="form-field">
         {{ form.as_p }}
+        </div>
     {% endfor %}
+    <div class="form-field">
+    <input type="submit" value="OK">
+    </div>
     </font>
     </body>
 </html>
