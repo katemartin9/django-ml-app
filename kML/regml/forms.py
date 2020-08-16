@@ -10,7 +10,6 @@ class UploadFileForm(forms.Form):
 
 
 class ColumnTypesForm(forms.Form):
-    col_name = forms.CharField(required=True, label='Name', disabled=True)
+    col_name = forms.CharField(required=True, label='Name')
     col_type = forms.ChoiceField(required=True, choices=COL_TYPES, label='Type')
     y = forms.BooleanField(required=False)
-

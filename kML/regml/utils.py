@@ -1,5 +1,5 @@
 import pandas as pd
-from .models import RegData, FileMetaData
+from .models import RegData, FileMetaData, ColumnTypes
 import matplotlib.pyplot as plt
 
 
@@ -77,7 +77,7 @@ def handle_uploaded_file(f, tick):
     return df.to_dict(orient='records')
 
 
-def load_file_into_db(data, title, user):
+def db_load_file(data, title, user):
     iter_data = []
     FileMetaData(project_name=title, user=user).save()
     for row in data:
@@ -85,3 +85,17 @@ def load_file_into_db(data, title, user):
                                  project_name=FileMetaData.objects.get(project_name=
                                                                        title)))
     RegData.objects.bulk_create(iter_data)
+
+
+def db_load_column_types(data, title):
+    iter_data = []
+    for row in data:
+        iter_data.append(ColumnTypes(col_name=row['col_name'],
+                                     col_type=row['col_type'],
+                                     y=row['y'],
+                                     project_name=FileMetaData.objects.get(project_name=
+                                                                           title)
+                                     ))
+    ColumnTypes.objects.bulk_create(iter_data)
+
+

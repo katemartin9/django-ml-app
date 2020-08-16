@@ -28,7 +28,7 @@ input[type=submit] {
     {% autoescape off %}
     {{ table }}
     {% endautoescape %}
-
+    <form method="post">
     {% for form in forms %}
         {% csrf_token %}
         <div class="form-field">
@@ -38,6 +38,7 @@ input[type=submit] {
     <div class="form-field">
     <input type="submit" value="OK">
     </div>
+    </form>
     </font>
     </body>
 </html>

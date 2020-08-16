@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from .forms import UploadFileForm, ColumnTypesForm
 from django.contrib.auth.models import User
-from .utils import handle_uploaded_file, load_file_into_db
+from .utils import handle_uploaded_file, db_load_file, db_load_column_types
 from .tables import generate_table
 from .models import RegData
 import dateparser
@@ -19,7 +19,7 @@ def upload_file(request):
             data = handle_uploaded_file(request.FILES['file'], tick)
             # TODO: check why doesn't throw error when project name exists
             user = User.objects.get()
-            load_file_into_db(data, title, user)
+            db_load_file(data, title, user)
             return HttpResponseRedirect(f'/data-preview/{title}')
         else:
             print('Error on form: ', form.errors)
@@ -37,22 +37,32 @@ def show_table(request, title):
     for d in data:
         results.append(d.observations)
     data_table = generate_table(results)
-    forms = save_column_types(request, results[0].keys(), results[0].values())
+    forms = generate_column_types(request, results[0].keys(), results[0].values())
+    if request.method == 'POST':
+        data = []
+        for i in range(len(forms)):
+            form = ColumnTypesForm(request.POST, prefix=f'form_{i}')
+            if form.is_valid():
+                data.append(form.cleaned_data)
+            else:
+                print('Error on form: ', form.errors)
+        db_load_column_types(data, title)
     return render(request, 'results.html', {'table': data_table, 'forms': forms})
 
 
-def save_column_types(request, columns, vals):
+def generate_column_types(request, columns, vals):
     forms = []
     customlist = ["%d-%m-%Y", "%d/%m/%Y", "%Y", "%m-%d-%Y", "%m/%d/%Y"]
+    idx = 0
     for col, val in zip(columns, vals):
-        print(val, type(val))
         if isinstance(val, float) or isinstance(val, int):
-            forms.append(ColumnTypesForm(initial={'col_name': col, 'col_type': 'n'}))
+            forms.append(ColumnTypesForm(initial={'col_name': col, 'col_type': 'n'}, prefix=f'form_{idx}'))
         elif isinstance(dateparser.parse(val,
                                          settings={'PARSERS': ['custom-formats']},
                                          date_formats=customlist), datetime.date):
-            forms.append(ColumnTypesForm(initial={'col_name': col, 'col_type': 'd'}))
+            forms.append(ColumnTypesForm(initial={'col_name': col, 'col_type': 'd'}, prefix=f'form_{idx}'))
         elif isinstance(val, str):
-            forms.append(ColumnTypesForm(initial={'col_name': col, 'col_type': 'c'}))
+            forms.append(ColumnTypesForm(initial={'col_name': col, 'col_type': 'c'}, prefix=f'form_{idx}'))
+        idx += 1
     return forms
 
