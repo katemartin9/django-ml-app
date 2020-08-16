@@ -85,5 +85,3 @@ def load_file_into_db(data, title, user):
                                  project_name=FileMetaData.objects.get(project_name=
                                                                        title)))
     RegData.objects.bulk_create(iter_data)
-
-

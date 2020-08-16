@@ -3,6 +3,8 @@ from django.contrib.postgres.fields import JSONField
 import datetime as dt
 from django.contrib.auth.models import User
 
+COL_TYPES = (('c', 'categorical'), ('n', 'numeric'), ('d', 'date'))
+
 
 # Create your models here.
 class FileMetaData(models.Model):
@@ -20,3 +22,10 @@ class RegData(models.Model):
 
     class Meta:
         verbose_name = 'Uploaded Data'
+
+
+class ColumnTypes(models.Model):
+    project_name = models.ForeignKey(FileMetaData, on_delete=models.PROTECT, max_length=50, blank=False, null=False)
+    col_name = models.TextField(blank=False, null=False)
+    col_type = models.TextField(choices=COL_TYPES, blank=False, null=False)
+    y = models.BooleanField(blank=False, null=False)
