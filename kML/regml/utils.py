@@ -3,7 +3,7 @@ from .models import RegData, FileMetaData, ColumnTypes
 import matplotlib.pyplot as plt
 
 
-class DataFrameImputer():
+class DataFrameImputer:
 
     def __init__(self):
         """Impute missing values.
