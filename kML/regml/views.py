@@ -10,7 +10,12 @@ import datetime
 
 
 # Create your views here.
+# UPLOAD FILE VIEW - upload_file.html
 def upload_file(request):
+    """
+    Step1: Renders the file upload form
+    Step2: loads the supplied file into the database
+    """
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -31,7 +36,12 @@ def upload_file(request):
     return render(request, 'upload_file.html', {'form': form})
 
 
+# RENDER TABLE VIEW - results.html
 def show_table(request, title):
+    """
+    Step 1: Renders a preview table with a snapshot of the data supplied
+    Step2: Loads updated column types into the database
+    """
     data = RegData.objects.all().filter(project_name=title).only('observations')
     results = []
     for d in data:
