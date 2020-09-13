@@ -28,10 +28,7 @@ def upload_file(request):
             db_load_file(data, title, user)
             return HttpResponseRedirect(reverse('data_preview', args=([title])))
         else:
-            print('Error on form: ', form.errors)
-            warning_message = f"Not a valid file."
-            form = UploadFileForm()
-            return render(request, 'upload_file.html', {'form': form, 'warning': warning_message})
+            return render(request, 'upload_file.html', {'form': form})
     else:
         form = UploadFileForm()
     return render(request, 'upload_file.html', {'form': form})
@@ -52,12 +49,11 @@ def show_table(request, title):
     if request.method == 'POST':
         data = []
         for i in range(len(forms)):
-            form = ColumnTypesForm(request.POST, prefix=f'form_{i}')
+            form = ColumnTypesForm(request.POST, prefix=f'form_{i}', fullpath=request.get_full_path())
             if form.is_valid():
                 data.append(form.cleaned_data)
             else:
                 print('Error on form: ', form.errors)
-        print(title)
         db_load_column_types(data, title)
         return HttpResponseRedirect(reverse('render_graphs', args=([title])))
     return render(request, 'results.html', {'table': data_table, 'forms': forms})
