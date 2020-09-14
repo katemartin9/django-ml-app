@@ -1,11 +1,11 @@
-from regml.models import RegData, FileMetaData
+from .models import RegData, ColumnTypes, DataOutput, FileMetaData
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import math
 import time
 import numpy as np
-from kML.regml.utils import Container, plot_regression_results
+from .utils import Container, plot_regression_results
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
@@ -14,82 +14,76 @@ from sklearn.compose import make_column_transformer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.metrics import mean_squared_error
+from pandas.api.types import is_string_dtype
+from pandas.api.types import is_numeric_dtype
+
 
 # STEP 1: Retrieve data from db
 # TODO:cache title
-title = 'housing project'
+title = 'boston project'
 
 data_dict = {}
-for i, row in enumerate(RegData.objects.raw('SELECT * FROM regml_regdata WHERE project_name_id = %s', [title])):
-    row_x = row.x
-    row_x.append(row.y)
-    data_dict[i] = row_x
+x_cols = []
+y_col = []
 
-for name in FileMetaData.objects.raw('SELECT * FROM regml_filemetadata WHERE project_name = %s', [title]):
-    x_cols = name.col_names
-    y_name = name.y_name
-    x_cols.append(y_name)
+col_types = {
+    'n': [],
+    'c': [],
+    'd': []
+}
 
-df_original = pd.DataFrame(data_dict.values(), columns=x_cols)
+for row in ColumnTypes.objects.all().filter(project_name=title):
+    if row.y:
+        y_col.append(row.col_name)
+        col_types[row.col_type].append(row.col_name)
+    else:
+        x_cols.append(row.col_name)
+        col_types[row.col_type].append(row.col_name)
+
+
+for i, row in enumerate(RegData.objects.all().filter(project_name=title)):
+    data_dict[i] = row.observations
+
 
 # STEP 2 build data frame with features for training
-# TODO: return column names and get user to choose from a drop down (numeric, categoric, datetime, specify format)
-cols = {'numeric': ['rooms', 'distance', 'bedroom2', 'bathroom', 'car', 'landsize',
-                      'buildingarea', 'lattitude', 'longtitude',
-                      'propertycount', 'price'],
-        'categorical': ['suburb', 'address', 'type', 'method', 'sellerg',
-                        'postcode', 'regionname', 'councilarea'],
-        'dates': ['date', 'yearbuilt']}
-
+df_original = pd.DataFrame.from_dict(data_dict, orient='index')
 df = df_original.copy()
-categorical_features = []
-numeric_features = []
-columns_to_drop = []
 
-# STEP 3: Add numerical columns and analyse
-if len(cols['numeric']) > 0:
-    for col in cols['numeric']:
+# STEP 3: Add numeric columns and analyse
+for col in col_types['n']:
+    if not is_numeric_dtype(df[col]):
         df[col] = pd.to_numeric(df[col])
-        if col != y_name:
-            numeric_features.append(col)
 
 
 # correlation matrix
-corr = df.corr()
-sns.heatmap(corr, mask=np.zeros_like(corr, dtype=np.bool),
-            cmap=sns.diverging_palette(220, 10, as_cmap=True),
-            square=True)
-#plt.show()
+corr = df[col_types['n']].corr()
+# saving corr matrix to plot in java script
+DataOutput(output=corr.to_json(), output_name='corr_matrix',
+           project_name=FileMetaData.objects.get(project_name=title)).save()
+
+# feature selection based on corr coefficients
 corr_matrix = pd.melt(df.corr().reset_index(), id_vars='index')
 corr_matrix = corr_matrix[corr_matrix.value < 1.0]
 high_pos_corr = list(corr_matrix[corr_matrix.value > 0.8][['index', 'variable']]\
     .itertuples(index=False, name=None))
-corr_with_y = corr_matrix[(corr_matrix.variable == y_name) &
+corr_with_y = corr_matrix[(corr_matrix.variable == y_col[0]) &
                           ((corr_matrix.value > 0.4) | (corr_matrix.value < -0.4))]['index'].to_list()
 features = [Container(x) for x in high_pos_corr]
 #columns_to_drop.extend(highly_corr)
 #columns_to_drop.extend(['TAX', 'RAD', 'AGE'])
 
 # Visualize the relationship between x and y
-temp_feats = numeric_features.copy()
-temp_feats.append(y_name)
-normalized_df = (df[temp_feats] -
-                 df[temp_feats].mean())/df[temp_feats].std()
-x_vars = []
-for i, f in enumerate(normalized_df.columns):
-    if i % 5 == 0 and i != 0:
-        sns.pairplot(normalized_df, x_vars=x_vars,
-                     y_vars=[y_name],
-                     height=7, aspect=0.7)
-        #plt.show()
-        x_vars = []
-    else:
-        x_vars.append(f)
+normalized_df = (df[col_types['n']] -
+                 df[col_types['n']].mean())/df[col_types['n']].std()
+
+# saving normalized data to create scatter plots in java script (checking linearity)
+DataOutput(output=normalized_df.to_json(), output_name='linearity_plot',
+           project_name=FileMetaData.objects.get(project_name=title)).save()
 
 
 # STEP 4: add categorical columns
-if len(cols['categorical']) > 0:
-    for col in cols['categorical']:
+if len(col_types['categorical']) > 0:
+    for col in col_types['categorical']:
         vals = df[col].nunique()
         if vals < 10:
             categorical_features.append(col)
@@ -98,8 +92,8 @@ if len(cols['categorical']) > 0:
 
 # STEP 5: drop columns that are not relevant
 # drop dates
-if len(cols['dates']) > 0:
-    columns_to_drop.extend(cols['dates'])
+if len(col_types['dates']) > 0:
+    columns_to_drop.extend(col_types['dates'])
 
 # drop selected columns
 df.drop(columns_to_drop, axis=1, inplace=True)

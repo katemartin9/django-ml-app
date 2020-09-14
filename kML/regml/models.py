@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
-import datetime as dt
 from django.contrib.auth.models import User
+import django
 
 COL_TYPES = (('c', 'categorical'), ('n', 'numeric'), ('d', 'date'))
 
@@ -9,7 +9,7 @@ COL_TYPES = (('c', 'categorical'), ('n', 'numeric'), ('d', 'date'))
 # Create your models here.
 class FileMetaData(models.Model):
     project_name = models.TextField(primary_key=True, max_length=50)
-    date = models.DateTimeField(default=dt.datetime.now())
+    date = models.DateTimeField(default=django.utils.timezone.now)
     user = models.ForeignKey(User, on_delete=models.PROTECT, default=User)
 
     class Meta:
