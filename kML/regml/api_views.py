@@ -1,35 +1,22 @@
 from rest_framework.generics import ListAPIView
 from rest_framework.serializers import ModelSerializer
-from .models import RegData, ColumnTypes
+from .models import DataOutput
 
 
-class RegDataSerializer(ModelSerializer):
-
-    class Meta:
-        model = RegData
-        fields = ['observations']
-
-
-class ColumnTypesSerializer(ModelSerializer):
+class DataOutputSerializer(ModelSerializer):
 
     class Meta:
-        model = ColumnTypes
-        fields = ['col_name', 'col_type', 'y']
+        model = DataOutput
+        fields = ['output', 'output_name']
 
 
-class RegDataApiView(ListAPIView):
-    serializer_class = RegDataSerializer
+class DataOutputApiView(ListAPIView):
+    serializer_class = DataOutputSerializer
 
     def get_queryset(self):
         title = self.kwargs['title']
-        return RegData.objects.filter(project_name=title)
+        return DataOutput.objects.filter(project_name=title)
 
 
-class ColumnTypesApiView(ListAPIView):
-    serializer_class = ColumnTypesSerializer
-
-    def get_queryset(self):
-        title = self.kwargs['title']
-        return ColumnTypes.objects.filter(project_name=title)
 
 

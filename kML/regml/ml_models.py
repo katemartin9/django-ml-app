@@ -18,49 +18,72 @@ from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
 
 
-# STEP 1: Retrieve data from db
-# TODO:cache title
-title = 'boston project'
+class FeatureSelection:
 
-data_dict = {}
-x_cols = []
-y_col = []
+    def __init__(self, title):
+        self.title = title
+        self.data_dict = {}
+        self.x_cols = []
+        self.y_cols = []
+        self.col_types = {
+            'n': [],
+            'c': [],
+            'd': []
+            }
+        self.df = None
 
-col_types = {
-    'n': [],
-    'c': [],
-    'd': []
-}
+    def retrieve_columns(self):
+        for row in ColumnTypes.objects.all().filter(project_name=self.title):
+            if row.y:
+                self.y_cols.append(row.col_name)
+                self.col_types[row.col_type].append(row.col_name)
+            else:
+                self.x_cols.append(row.col_name)
+                self.col_types[row.col_type].append(row.col_name)
 
-for row in ColumnTypes.objects.all().filter(project_name=title):
-    if row.y:
-        y_col.append(row.col_name)
-        col_types[row.col_type].append(row.col_name)
-    else:
-        x_cols.append(row.col_name)
-        col_types[row.col_type].append(row.col_name)
+    def retrieve_observations(self):
+        for i, row in enumerate(RegData.objects.all().filter(project_name=self.title)):
+            self.data_dict[i] = row.observations
+
+    def build_df(self):
+        self.df = pd.DataFrame.from_dict(self.data_dict, orient='index')
+        # check all numeric columns have been converted
+        for col in self.col_types['n']:
+            if not is_numeric_dtype(self.df[col]):
+                self.df[col] = pd.to_numeric(self.df[col])
+        # TODO: check all categorical columns have been converted
+
+    def save_corr_matrix(self):
+        corr = self.df[self.col_types['n']].corr()
+        # checking if exists
+        existing = DataOutput.objects.filter(project_name=self.title, output_name='corr_matrix').exists()
+        if existing:
+            DataOutput.objects.filter(project_name=self.title, output_name='corr_matrix').delete()
+        # saving corr matrix to plot in java script
+        DataOutput(output=corr.to_dict(), output_name='corr_matrix',
+                   project_name=FileMetaData.objects.get(project_name=self.title)).save()
+
+    def save_xy_linearity(self):
+        normalized_df = (self.df[self.col_types['n']] -
+                         self.df[self.col_types['n']].mean()) / self.df[self.col_types['n']].std()
+        # checking if exists
+        existing = DataOutput.objects.filter(project_name=self.title, output_name='linearity_plot').exists()
+        if existing:
+            DataOutput.objects.filter(project_name=self.title, output_name='linearity_plot').delete()
+        # saving normalized data to create scatter plots in java script (checking linearity)
+        DataOutput(output=normalized_df.to_dict(), output_name='linearity_plot',
+                   project_name=FileMetaData.objects.get(project_name=self.title)).save()
+
+    def run(self):
+        self.retrieve_columns()
+        self.retrieve_observations()
+        self.build_df()
+        self.save_corr_matrix()
+        self.save_xy_linearity()
 
 
-for i, row in enumerate(RegData.objects.all().filter(project_name=title)):
-    data_dict[i] = row.observations
 
-
-# STEP 2 build data frame with features for training
-df_original = pd.DataFrame.from_dict(data_dict, orient='index')
-df = df_original.copy()
-
-# STEP 3: Add numeric columns and analyse
-for col in col_types['n']:
-    if not is_numeric_dtype(df[col]):
-        df[col] = pd.to_numeric(df[col])
-
-
-# correlation matrix
-corr = df[col_types['n']].corr()
-# saving corr matrix to plot in java script
-DataOutput(output=corr.to_json(), output_name='corr_matrix',
-           project_name=FileMetaData.objects.get(project_name=title)).save()
-
+"""
 # feature selection based on corr coefficients
 corr_matrix = pd.melt(df.corr().reset_index(), id_vars='index')
 corr_matrix = corr_matrix[corr_matrix.value < 1.0]
@@ -72,13 +95,7 @@ features = [Container(x) for x in high_pos_corr]
 #columns_to_drop.extend(highly_corr)
 #columns_to_drop.extend(['TAX', 'RAD', 'AGE'])
 
-# Visualize the relationship between x and y
-normalized_df = (df[col_types['n']] -
-                 df[col_types['n']].mean())/df[col_types['n']].std()
 
-# saving normalized data to create scatter plots in java script (checking linearity)
-DataOutput(output=normalized_df.to_json(), output_name='linearity_plot',
-           project_name=FileMetaData.objects.get(project_name=title)).save()
 
 
 # STEP 4: add categorical columns
@@ -148,6 +165,6 @@ plt.show()
 
 # STEP 10: OUTPUT RESULT
 
-
+"""
 
 

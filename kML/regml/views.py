@@ -8,6 +8,7 @@ from .tables import generate_table
 from .models import RegData
 import dateparser
 import datetime
+from .ml_models import FeatureSelection
 
 
 # Create your views here.
@@ -78,4 +79,5 @@ def generate_column_types(request, columns, vals):
 
 
 def render_graphs(request, title):
+    FeatureSelection(title).run()
     return render(request, 'render_graphs.html')
