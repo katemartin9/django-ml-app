@@ -54,13 +54,13 @@ class FeatureSelection:
         # TODO: check all categorical columns have been converted
 
     def save_corr_matrix(self):
-        corr = self.df[self.col_types['n']].corr()
+        corr = self.df[self.col_types['n']].corr().reset_index()
         # checking if exists
         existing = DataOutput.objects.filter(project_name=self.title, output_name='corr_matrix').exists()
         if existing:
             DataOutput.objects.filter(project_name=self.title, output_name='corr_matrix').delete()
         # saving corr matrix to plot in java script
-        DataOutput(output=corr.to_dict(), output_name='corr_matrix',
+        DataOutput(output=pd.melt(corr, id_vars='index').to_dict(orient='records'), output_name='corr_matrix',
                    project_name=FileMetaData.objects.get(project_name=self.title)).save()
 
     def save_xy_linearity(self):
