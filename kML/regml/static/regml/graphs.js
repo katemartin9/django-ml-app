@@ -11,7 +11,7 @@ var CORRMATRIX = CORRMATRIX || (function() {
         init: function(Args) {
             _args = Args;
         },
-        corrMatrix : function () {
+        plotData : function () {
             let source = _args[0];
         fetch(`${source}/api`)
             .then(response => {
@@ -19,7 +19,7 @@ var CORRMATRIX = CORRMATRIX || (function() {
             })
             .then(data => {
                 const corrData = data[0];
-                const linData = data[1];
+
                 const axisVals = corrData["output"]
                     .map(element => element.index)
                     .filter((item, i, ar) => ar.indexOf(item) === i)
@@ -27,8 +27,8 @@ var CORRMATRIX = CORRMATRIX || (function() {
                 const innerVals = corrData["output"].map(element => [axisVals.indexOf(element.index),
                     axisVals.indexOf(element.variable), Math.round(element.value * 10) / 10])
 
-
-                Highcharts.chart('container', {
+                // corr matrix plot
+                Highcharts.chart('matrix_container', {
 
                     chart: {
                         type: 'heatmap',
@@ -38,7 +38,7 @@ var CORRMATRIX = CORRMATRIX || (function() {
                     },
 
                     title: {
-                        text: 'Correlation Matrix of the Variables'
+                        text: 'Feature Correlation Matrix'
                     },
 
                     xAxis: {
@@ -90,7 +90,7 @@ var CORRMATRIX = CORRMATRIX || (function() {
                     },
 
                     series: [{
-                        name: 'Sales per employee',
+                        name: 'Corr Matrix',
                         borderWidth: 0.2,
                         data: innerVals,
                         dataLabels: {
@@ -117,6 +117,7 @@ var CORRMATRIX = CORRMATRIX || (function() {
                     }
 
                 });
+
             })
 
             }

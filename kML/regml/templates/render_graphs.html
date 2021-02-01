@@ -7,24 +7,26 @@
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
+<script src="{% static "regml/graphs.js" %}"></script>
+<script>
+    CORRMATRIX.init([`{{ request.get_full_path }}`]);
+    CORRMATRIX.plotData();
+</script>
+
 <head>
     <meta charset="UTF-8">
     <title>Data Modelling</title>
 
 </head>
 <body>
-<div title="Correlation Matrix" onload="">
-<figure class="highcharts-figure">
-    <div id="container"></div>
-    <p class="highcharts-description">
 
-    </p>
+<div>
+<figure class="highcharts-figure">
+    <div id="matrix_container" style="width:600px;"></div>
 </figure>
 </div>
-<script src="{% static "regml/graphs.js" %}"></script>
-<script>
-    CORRMATRIX.init([`{{ request.get_full_path }}`]);
-    CORRMATRIX.corrMatrix();
-</script>
+    <div id="linear_container" title="Feature Linearity">
+        {{ graph | safe }}
+    </div>
 </body>
 </html>

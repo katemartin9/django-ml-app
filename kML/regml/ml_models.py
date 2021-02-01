@@ -16,6 +16,10 @@ from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.metrics import mean_squared_error
 from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.offline as opy
+import math
 
 
 class FeatureSelection:
@@ -63,26 +67,45 @@ class FeatureSelection:
         DataOutput(output=pd.melt(corr, id_vars='index').to_dict(orient='records'), output_name='corr_matrix',
                    project_name=FileMetaData.objects.get(project_name=self.title)).save()
 
-    def save_xy_linearity(self):
+    def plot_xy_linearity(self):
         normalized_df = (self.df[self.col_types['n']] -
                          self.df[self.col_types['n']].mean()) / self.df[self.col_types['n']].std()
-        # checking if exists
-        existing = DataOutput.objects.filter(project_name=self.title, output_name='linearity_plot').exists()
-        if existing:
-            DataOutput.objects.filter(project_name=self.title, output_name='linearity_plot').delete()
-        # saving normalized data to create scatter plots in java script (checking linearity)
-        DataOutput(output=normalized_df.to_dict(), output_name='linearity_plot',
-                   project_name=FileMetaData.objects.get(project_name=self.title)).save()
+        if normalized_df.shape[0] > 500:
+            normalized_df = normalized_df.sample(500)
+        x = self.y_cols[0]
+        temp_cols = list(normalized_df.columns)
+        temp_cols.remove(x)
+        len(temp_cols)
+
+        fig = make_subplots(rows=math.ceil(len(temp_cols) / 2), cols=2, start_cell="bottom-left",
+                            subplot_titles=tuple(temp_cols))
+        rows = 0
+        for i, y in enumerate(temp_cols):
+            if (i + 1) % 2 == 0:
+                cols = 2
+            else:
+                cols = 1
+                rows += 1
+            fig.add_trace(go.Scatter(x=normalized_df[x], y=normalized_df[y], mode='markers'), row=rows, col=cols)
+        fig.update_layout(showlegend=False, title_text=f"Linear Relationship of {x} (x axis) and features (y axis)",
+                          template="plotly_white")
+        fig.update_layout(
+            autosize=False,
+            width=900,
+            # TODO:better adjust height
+            height=1000)
+        return opy.plot(fig, auto_open=False, output_type='div')
 
     def run(self):
         self.retrieve_columns()
         self.retrieve_observations()
         self.build_df()
         self.save_corr_matrix()
-        self.save_xy_linearity()
+        div = self.plot_xy_linearity()
+        return div
 
 
-
+# TODO: integrate into the above code some remaining logic and delete
 """
 # feature selection based on corr coefficients
 corr_matrix = pd.melt(df.corr().reset_index(), id_vars='index')
