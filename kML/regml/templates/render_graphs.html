@@ -6,7 +6,6 @@
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-
 <script src="{% static "regml/graphs.js" %}"></script>
 <script>
     CORRMATRIX.init([`{{ request.get_full_path }}`]);
@@ -14,19 +13,26 @@
 </script>
 
 <head>
+    <link rel="stylesheet" href="{% static "regml/style.css" %}">
     <meta charset="UTF-8">
     <title>Data Modelling</title>
 
 </head>
 <body>
-
 <div>
 <figure class="highcharts-figure">
+    <h2>FEATURE SELECTION</h2>
     <div id="matrix_container" style="width:600px;"></div>
 </figure>
 </div>
-    <div id="linear_container" title="Feature Linearity">
-        {{ graph | safe }}
-    </div>
+
+<div class="block_container">
+    <div class="float-child">{{ graph1 | safe }}</div>
+    <div class="float-child">{{ graph2 | safe }}</div>
+</div>
+
+<div class="block_container">
+<h2>COLUMNS TO REMOVE</h2>
+</div>
 </body>
 </html>

@@ -80,4 +80,4 @@ def generate_column_types(request, columns, vals):
 
 def render_graphs(request, title):
     div = FeatureSelection(title).run()
-    return render(request, 'render_graphs.html', {'graph': div})
+    return render(request, 'render_graphs.html', {'graph1': div[0], 'graph2': div[1]})
