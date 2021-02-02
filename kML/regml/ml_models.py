@@ -114,9 +114,6 @@ class FeatureSelection:
                           template="plotly_white")
         return opy.plot(fig, auto_open=False, output_type='div')
 
-    def train_linreg(self):
-        pass
-
     def run(self):
         self.retrieve_columns()
         self.retrieve_observations()
@@ -127,7 +124,56 @@ class FeatureSelection:
         return [div, div2]
 
 
-# TODO: integrate into the above code some remaining logic and delete
+class RegModel:
+
+    def __init__(self):
+        self.categorical_cols = None
+        self.numeric_cols = None
+        self.X_train = None
+        self.X_test = None
+        self.y_train = None
+        self.y_test = None
+
+    def split_train_test(self, df, y_col, drop_cols, numeric_features, categorical_features):
+        df = df.drop(drop_cols, axis=1)
+        X, y = df.drop(y_col, axis=1), df[y_col].astype(int)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, random_state=42, test_size=0.2)
+        self.numeric_cols = list(set(numeric_features).intersection(df.columns))
+        self.categorical_cols = list(set(categorical_features).intersection(df.columns))
+
+    def transform_cols(self):
+        numeric_transformer = StandardScaler()
+        categorical_transformer = OneHotEncoder(handle_unknown='ignore')
+        preprocessor = make_column_transformer(
+            (numeric_transformer, self.numeric_cols),
+            (categorical_transformer, self.categorical_cols),
+            remainder='passthrough')
+        return preprocessor, numeric_transformer
+
+    def train_pipeline(self, preprocessor, numeric_transformer):
+        rf_pipeline = make_pipeline(preprocessor,
+                                    RandomForestRegressor(random_state=42, n_estimators=50))
+        gradient_pipeline = make_pipeline(
+            preprocessor,
+            HistGradientBoostingRegressor(random_state=0))
+        regressor = make_pipeline(preprocessor,
+                                  LinearRegression())
+        ridge_reg = RidgeCV([1e-3, 1e-2, 1e-1, 1])
+        poly_reg = PolynomialFeatures(degree=2, include_bias=False)
+        poly_pipeline = Pipeline([
+            ("poly_features", poly_reg),
+            ("std_scaler", numeric_transformer),
+            ('regul_reg', ridge_reg)])
+        return rf_pipeline, gradient_pipeline, regressor, poly_pipeline
+
+    def plot_model_performance(self):
+        pass
+
+    def run(self):
+        self.split_train_test()
+        preprocessor, numeric_transformer = self.transform_cols()
+        self.train_pipeline(preprocessor, numeric_transformer)
+
 
 
 
