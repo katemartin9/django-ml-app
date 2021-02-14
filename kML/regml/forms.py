@@ -35,3 +35,14 @@ class ColumnTypesForm(forms.Form):
         existing = ColumnTypes.objects.filter(project_name=form_title).exists()
         if existing:
             ColumnTypes.objects.filter(project_name=form_title).delete()
+
+
+class ColumnsToRemove(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        if 'fullpath' in kwargs:
+            self.full_url_path = kwargs.pop('fullpath')
+        super().__init__(*args, **kwargs)
+
+    col_name = forms.CharField(required=True, label='Name')
+    remove_add = forms.BooleanField(label='Remove')

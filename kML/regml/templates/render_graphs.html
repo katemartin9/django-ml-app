@@ -33,6 +33,27 @@
 
 <div class="block_container">
 <h2>COLUMNS TO REMOVE</h2>
+
+    <ul class="list-group list-group-flush">
+        <h3>Proposing to remove columns based on these four factors:</h3>
+          <li class="list-group-item">Highly correlated features</li>
+          <li class="list-group-item">Have no linear relationship with y</li>
+          <li class="list-group-item">High p-value of the f-scores is not significant (>0.05)</li>
+          <li class="list-group-item">Categorical columns that have too many unique values</li>
+        <li class="list-group-item">Date columns</li>
+    </ul>
+
+    <form method="post">
+    {% for form in forms %}
+        {% csrf_token %}
+        <div class="form-field">
+        {{ form.as_p }}
+        </div>
+    {% endfor %}
+    <div class="form-field">
+    <input type="submit" value="OK">
+    </div>
+    </form>
 </div>
 </body>
 </html>

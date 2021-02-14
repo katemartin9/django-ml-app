@@ -159,6 +159,10 @@ class FeatureSelection:
                     g_scores = {k: v for k, v in scores.items() if k in g}
                     g.remove(max(g_scores, key=g_scores.get))
                     cols_to_remove.extend(list(g))
+        # date columns
+        cols_to_remove.extend(self.col_types['d'])
+        # TODO: categorical
+        # TODO: f_scores
         return cols_to_remove
 
     def run(self):

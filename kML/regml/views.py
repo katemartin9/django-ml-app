@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .forms import UploadFileForm, ColumnTypesForm
+from .forms import UploadFileForm, ColumnTypesForm, ColumnsToRemove
 from django.contrib.auth.models import User
 from .utils import handle_uploaded_file, db_load_file, db_load_column_types
 from .tables import generate_table
@@ -78,6 +78,22 @@ def generate_column_types(request, columns, vals):
     return forms
 
 
+# RENDER FEATURE SELECTION render_graphs.html
 def render_graphs(request, title):
-    div = FeatureSelection(title).run()
-    return render(request, 'render_graphs.html', {'graph1': div[0], 'graph2': div[1]})
+    cl = FeatureSelection(title)
+    div, cols_to_remove = cl.run()
+    forms = []
+    for idx, col in enumerate(cl.x_cols):
+        if col in cols_to_remove:
+            forms.append(ColumnsToRemove(initial={'col_name': col,
+                                                  'remove_add': True}, prefix=f'form_{idx}'))
+        else:
+            forms.append(ColumnsToRemove(initial={'col_name': col,
+                                                  'remove_add': False}, prefix=f'form_{idx}'))
+    if request.method == 'POST':
+        # TODO: update the list of columns to remove
+        return HttpResponseRedirect(reverse('', args=([title])))
+    return render(request, 'render_graphs.html', {'graph1': div[0],
+                                                  'graph2': div[1],
+                                                  'forms': forms})
+
