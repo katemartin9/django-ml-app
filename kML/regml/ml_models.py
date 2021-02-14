@@ -15,12 +15,12 @@ from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import chi2, f_regression
-from pandas.api.types import is_string_dtype
 from pandas.api.types import is_numeric_dtype
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.offline as opy
 import math
+import networkx as nx
 
 
 class FeatureSelection:
@@ -79,6 +79,7 @@ class FeatureSelection:
         # saving corr matrix to plot in java script
         DataOutput(output=pd.melt(corr, id_vars='index').to_dict(orient='records'), output_name='corr_matrix',
                    project_name=FileMetaData.objects.get(project_name=self.title)).save()
+        return corr
 
     def plot_xy_linearity(self):
         normalized_df = (self.df[self.col_types['int']] -
@@ -125,14 +126,50 @@ class FeatureSelection:
                           template="plotly_white")
         return opy.plot(fig, auto_open=False, output_type='div')
 
+    def propose_columns_to_remove(self, corr_matrix, corr_thresh=0.6):
+        """
+        Columns have to fall into the below to be removed:
+            - highly correlated
+            - have no linear relationship with y
+            - categorical columns that have too many unique values
+            - high p-value of the f-scores is not significant (>0.05)
+        """
+        cols_to_remove = []
+        # corr part
+        corr_matrix = pd.melt(corr_matrix, id_vars='index')
+        corr_matrix['value'] = corr_matrix['value'].abs()
+        corr_matrix = corr_matrix[~(corr_matrix['index'] == corr_matrix['variable'])]
+        corr_matrix_no_y = corr_matrix[~((corr_matrix['index'] == self.y_cols[0]) |
+                                       (corr_matrix['variable'] == self.y_cols[0]))]
+        high_corr_pair = list(corr_matrix_no_y[corr_matrix_no_y.value > corr_thresh][['index', 'variable']]\
+                             .itertuples(index=False, name=None))
+        if len(high_corr_pair) > 0:
+            unique_pairs = set(tuple(sorted(l)) for l in high_corr_pair)
+            G = nx.Graph()
+            G.add_edges_from(unique_pairs)
+            groups = list(nx.connected_components(G))
+            scores = nx.betweenness_centrality(G)
+            for g in groups:
+                if len(g) == 2:
+                    rm_val = corr_matrix[(corr_matrix['index'] == self.y_cols[0]) &
+                                (corr_matrix['variable'].isin(g))]\
+                        .sort_values(by='value').iloc[0].variable
+                    cols_to_remove.append(rm_val)
+                else:
+                    g_scores = {k: v for k, v in scores.items() if k in g}
+                    g.remove(max(g_scores, key=g_scores.get))
+                    cols_to_remove.extend(list(g))
+        return cols_to_remove
+
     def run(self):
         self.retrieve_columns()
         self.retrieve_observations()
         self.build_df()
-        self.save_corr_matrix()
+        corr_matrix = self.save_corr_matrix()
         div = self.plot_xy_linearity()
         div2 = self.calculate_f_scores()
-        return [div, div2]
+        cols_to_remove = self.propose_columns_to_remove(corr_matrix)
+        return [div, div2], cols_to_remove
 
 
 class RegModel:
