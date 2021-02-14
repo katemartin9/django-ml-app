@@ -33,7 +33,8 @@ class FeatureSelection:
         self.col_types = {
             'n': [],
             'c': [],
-            'd': []
+            'd': [],
+            'int': []
             }
         self.df = None
 
@@ -52,15 +53,25 @@ class FeatureSelection:
 
     def build_df(self):
         self.df = pd.DataFrame.from_dict(self.data_dict, orient='index')
-        # TODO: check all numeric columns have been converted
         for col in self.col_types['n']:
             if not is_numeric_dtype(self.df[col]):
+                try:
+                    self.df[col] = pd.to_numeric(self.df[col])
+                except ValueError as e:
+                    self.col_types['n'].remove(col)
+                    self.col_types['c'].append(col)
+
+        for col in self.col_types['c']:
+            try:
                 self.df[col] = pd.to_numeric(self.df[col])
-        # TODO: check all categorical columns have been converted
-        # TODO: deal with the date columns
+            except ValueError as e:
+                pass
+            else:
+                self.col_types['int'].append(col)
+        self.col_types['int'].extend(self.col_types['n'])
 
     def save_corr_matrix(self):
-        corr = self.df[self.col_types['n']].corr().reset_index()
+        corr = self.df[self.col_types['int']].corr().reset_index()
         # checking if exists
         existing = DataOutput.objects.filter(project_name=self.title, output_name='corr_matrix').exists()
         if existing:
@@ -70,8 +81,8 @@ class FeatureSelection:
                    project_name=FileMetaData.objects.get(project_name=self.title)).save()
 
     def plot_xy_linearity(self):
-        normalized_df = (self.df[self.col_types['n']] -
-                         self.df[self.col_types['n']].mean()) / self.df[self.col_types['n']].std()
+        normalized_df = (self.df[self.col_types['int']] -
+                         self.df[self.col_types['int']].mean()) / self.df[self.col_types['int']].std()
         if normalized_df.shape[0] > 500:
             normalized_df = normalized_df.sample(500)
         x = self.y_cols[0]
