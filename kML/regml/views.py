@@ -92,8 +92,12 @@ def render_graphs(request, title):
                                                   'remove_add': False}, prefix=f'form_{idx}'))
     if request.method == 'POST':
         # TODO: update the list of columns to remove
-        return HttpResponseRedirect(reverse('', args=([title])))
+        return HttpResponseRedirect(reverse('train_models', args=([title])))
     return render(request, 'render_graphs.html', {'graph1': div[0],
                                                   'graph2': div[1],
                                                   'forms': forms})
+
+
+def train_models(request, title):
+    return render(request, 'train_models.html')
 

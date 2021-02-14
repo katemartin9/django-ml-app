@@ -45,4 +45,4 @@ class ColumnsToRemove(forms.Form):
         super().__init__(*args, **kwargs)
 
     col_name = forms.CharField(required=True, label='Name')
-    remove_add = forms.BooleanField(label='Remove')
+    remove_add = forms.BooleanField(label='Remove', required=False)
