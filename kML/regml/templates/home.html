@@ -12,7 +12,8 @@
 
     <!-- Bootstrap core CSS -->
     <link href="https://getbootstrap.com/docs/4.4/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <!-- Custom styles for this template -->
 <style>
 /*
@@ -35,7 +36,10 @@ a:hover {
   background-color: #2D3949;
   border: #2D3949;
   width: 300px;
-    font-family: Helvetica, Arial, sans-serif;
+    font-family: 'VT323', monospace;
+    font-smooth: never;
+    -webkit-font-smoothing : none;
+    font-size: 30px;
 }
 
 
@@ -156,16 +160,17 @@ body {
         </div>
           <div id="options">
         <p class="lead">
-          <a href="/regml/upload-file" class="btn btn-lg btn-secondary">Regression</a>
+          <a href="/regml/upload-file" class="btn btn-lg btn-secondary">REGRESSION</a>
         </p>
-          <p class="lead">
-           <a href="" class="btn btn-lg btn-secondary">Classification</a>
+              <p class="lead">
+           <a href="" class="btn btn-lg btn-secondary">CLUSTERING</a>
           </p>
           <p class="lead">
-           <a href="" class="btn btn-lg btn-secondary">Clustering</a>
+           <a href="" class="btn btn-lg btn-secondary">CLASSIFICATION</a>
           </p>
+
           <p class="lead">
-           <a href="" class="btn btn-lg btn-secondary">DeepML</a>
+           <a href="" class="btn btn-lg btn-secondary">DEEP LEARNING</a>
           </p>
             </div>
       </main>
