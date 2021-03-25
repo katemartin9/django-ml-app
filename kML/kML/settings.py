@@ -11,14 +11,12 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
-with open('info.txt') as f:
+with open(os.path.join(BASE_DIR, 'kML/info.txt')) as f:
     info_settings = f.read().strip().split('\n')
     key = info_settings[0]
     username = info_settings[1]
@@ -45,7 +43,8 @@ INSTALLED_APPS = [
     'regml',
     'superml',
     'clustml',
-    'classml'
+    'classml',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [

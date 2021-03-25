@@ -35,3 +35,8 @@ class DataOutput(models.Model):
     project_name = models.ForeignKey(FileMetaData, on_delete=models.PROTECT, max_length=50, blank=False, null=False)
     output_name = models.TextField(blank=False, null=False, max_length=50)
     output = JSONField()
+
+
+class Dropdown(models.Model):
+    project_name = models.ForeignKey(FileMetaData, on_delete=models.PROTECT, max_length=50, blank=False, null=False)
+    col_name = models.TextField(blank=False, null=False)

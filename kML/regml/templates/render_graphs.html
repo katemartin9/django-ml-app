@@ -1,38 +1,34 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/heatmap.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
-<script src="https://code.highcharts.com/modules/export-data.js"></script>
-<script src="https://code.highcharts.com/modules/accessibility.js"></script>
 <script src="{% static "regml/graphs.js" %}"></script>
-<script>
-    CORRMATRIX.init([`{{ request.get_full_path }}`]);
-    CORRMATRIX.plotData();
-</script>
 
 <head>
     <link rel="stylesheet" href="{% static "regml/style.css" %}">
     <meta charset="UTF-8">
     <title>Data Modelling</title>
-
 </head>
 <body>
-<div>
-<figure class="highcharts-figure">
-    <h2>FEATURE SELECTION</h2>
-    <div id="matrix_container" style="width:600px;"></div>
-</figure>
+<div class="prevnext_container">
+<a href="#" class="previous">Prev</a>
+<a href="#" class="next">Next</a>
+</div>
+<div class="main-container" style="display: grid">
+<div class="block_container">
+    <h2 class="dark-text">FEATURE SELECTION HELPER GRAPHS</h2>
+    <div class="float-child">{{ corr_plot | safe }}</div>
+    <div class="float-child">
+        <form method="get">
+       {{ dropdown_form }}
+        {{ xy_plot | safe }}
+            </form>
+    </div>
+    <div class="float-child">{{ f_plot | safe }}</div>
 </div>
 
 <div class="block_container">
-    <div class="float-child">{{ graph1 | safe }}</div>
-    <div class="float-child">{{ graph2 | safe }}</div>
-</div>
+<h2 class="dark-text">COLUMNS TO REMOVE</h2>
 
-<div class="block_container">
-<h2>COLUMNS TO REMOVE</h2>
 
     <ul class="list-group list-group-flush">
         <h3>Proposing to remove columns based on these four factors:</h3>
@@ -54,6 +50,7 @@
     <input type="submit" value="OK">
     </div>
     </form>
+</div>
 </div>
 </body>
 </html>

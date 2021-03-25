@@ -1,4 +1,4 @@
-from .models import RegData, ColumnTypes, DataOutput, FileMetaData
+from .models import RegData, ColumnTypes, DataOutput, FileMetaData, Dropdown
 import pandas as pd
 import seaborn as sns
 import math
@@ -19,6 +19,7 @@ from pandas.api.types import is_numeric_dtype
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.offline as opy
+import plotly.express as px
 import math
 import networkx as nx
 
@@ -37,6 +38,7 @@ class FeatureSelection:
             'int': []
             }
         self.df = None
+        self.build_df()
 
     def retrieve_columns(self):
         for row in ColumnTypes.objects.all().filter(project_name=self.title):
@@ -52,6 +54,8 @@ class FeatureSelection:
             self.data_dict[i] = row.observations
 
     def build_df(self):
+        self.retrieve_columns()
+        self.retrieve_observations()
         self.df = pd.DataFrame.from_dict(self.data_dict, orient='index')
         for col in self.col_types['n']:
             if not is_numeric_dtype(self.df[col]):
@@ -69,6 +73,11 @@ class FeatureSelection:
             else:
                 self.col_types['int'].append(col)
         self.col_types['int'].extend(self.col_types['n'])
+        existing = Dropdown.objects.filter(project_name=self.title).exists()
+        if existing:
+            Dropdown.objects.filter(project_name=self.title).delete()
+        for c in self.col_types['int']:
+            Dropdown(col_name=c, project_name=FileMetaData.objects.get(project_name=self.title)).save()
 
     def save_corr_matrix(self):
         corr = self.df[self.col_types['int']].corr().reset_index()
@@ -79,30 +88,36 @@ class FeatureSelection:
         # saving corr matrix to plot in java script
         DataOutput(output=pd.melt(corr, id_vars='index').to_dict(orient='records'), output_name='corr_matrix',
                    project_name=FileMetaData.objects.get(project_name=self.title)).save()
-        return corr
+        fig = px.imshow(corr.set_index('index'),
+                        color_continuous_scale=[(0, "#ff9900"), (0.5, 'white'), (1, "#2D3949")],
+                        )
+        fig.update_layout(showlegend=False, title_text=f"Feature Correlation Matrix",
+                          template="presentation")
+        fig.update_yaxes(title=None)
+        fig.update_xaxes(tickangle=45)
+        fig.update_layout(
+            font_family="Gravitas One",
+            font_color="#2D3949",
+        )
+        return corr, opy.plot(fig, auto_open=False, output_type='div')
 
-    def plot_xy_linearity(self):
-        normalized_df = (self.df[self.col_types['int']] -
-                         self.df[self.col_types['int']].mean()) / self.df[self.col_types['int']].std()
-        if normalized_df.shape[0] > 500:
-            normalized_df = normalized_df.sample(500)
-        x = self.y_cols[0]
-        temp_cols = list(normalized_df.columns)
-        temp_cols.remove(x)
-        len(temp_cols)
-
-        fig = make_subplots(rows=math.ceil(len(temp_cols) / 2), cols=2, start_cell="bottom-left",
-                            subplot_titles=tuple(temp_cols))
-        rows = 0
-        for i, y in enumerate(temp_cols):
-            if (i + 1) % 2 == 0:
-                cols = 2
-            else:
-                cols = 1
-                rows += 1
-            fig.add_trace(go.Scatter(x=normalized_df[x], y=normalized_df[y], mode='markers'), row=rows, col=cols)
-        fig.update_layout(showlegend=False, title_text=f"Linear Relationship of {x} (x axis) and features (y axis)",
-                          template="plotly_white")
+    def plot_xy_linearity(self, var):
+        extract_df = self.df[[var, self.y_cols[0]]]
+        normalized_df = (extract_df - extract_df.mean()) / extract_df.std()
+        if normalized_df.shape[0] > 1000:
+            normalized_df = normalized_df.sample(1000)
+        target = self.y_cols[0]
+        fig = px.scatter(normalized_df, x=var, y=target)
+        fig.update_layout(showlegend=False, title_text=f"{var.capitalize()} - Target {target.capitalize()}",
+                          template="presentation")
+        fig.update_traces(marker=dict(size=5,
+                                      line=dict(width=2,
+                                                color='#2D3949')),
+                          selector=dict(mode='markers'))
+        fig.update_layout(
+            font_family="Gravitas One",
+            font_color="#2D3949",
+        )
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def calculate_f_scores(self):
@@ -120,10 +135,15 @@ class FeatureSelection:
             .sort_values(ascending=False)
 
         fig = go.Figure([go.Bar(x=p_values.index, y=p_values.values)])
-        fig.update_traces(marker_color='rgb(158,202,225)', marker_line_color='rgb(8,48,107)',
-                          marker_line_width=1.5, opacity=0.6)
-        fig.update_layout(showlegend=False, title_text=f"F-scores - Categorical and Numeric Features",
-                          template="plotly_white")
+        fig.update_traces(marker_color="#ff9900", marker_line_color='#2D3949',
+                          marker_line_width=1.5, opacity=0.8)
+        fig.update_layout(showlegend=False, title_text=f"Feature F-scores",
+                          template="presentation")
+        fig.update_xaxes(tickangle=45)
+        fig.update_layout(
+            font_family="Gravitas One",
+            font_color="#2D3949",
+        )
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def propose_columns_to_remove(self, corr_matrix, corr_thresh=0.6):
@@ -165,15 +185,12 @@ class FeatureSelection:
         # TODO: f_scores
         return cols_to_remove
 
-    def run(self):
-        self.retrieve_columns()
-        self.retrieve_observations()
-        self.build_df()
-        corr_matrix = self.save_corr_matrix()
-        div = self.plot_xy_linearity()
-        div2 = self.calculate_f_scores()
+    def run(self, var):
+        corr_matrix, div_corr = self.save_corr_matrix()
+        div_lin = self.plot_xy_linearity(var)
+        div_f = self.calculate_f_scores()
         cols_to_remove = self.propose_columns_to_remove(corr_matrix)
-        return [div, div2], cols_to_remove
+        return div_corr, div_lin, div_f, cols_to_remove
 
 
 class RegModel:
