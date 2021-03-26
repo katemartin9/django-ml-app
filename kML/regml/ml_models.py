@@ -3,7 +3,7 @@ import pandas as pd
 from .utils import plot_regression_results
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.linear_model import LinearRegression, RidgeCV
-from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
 from sklearn.compose import make_column_transformer
 from sklearn.model_selection import train_test_split
@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 import plotly.offline as opy
 import plotly.io as pio
 import networkx as nx
-
+from collections import defaultdict
 
 pio.templates["plotly_white_custom"] = pio.templates["plotly_white"]
 pio.templates["plotly_white_custom"]["layout"]["title_font_size"] = 20
@@ -225,13 +225,14 @@ class RegModel:
         self.X_test = None
         self.y_train = None
         self.y_test = None
+        self.results = defaultdict()
 
     def split_train_test(self, df, y_col, drop_cols, numeric_features, categorical_features):
         df = df.drop(drop_cols, axis=1)
-        X, y = df.drop(y_col, axis=1), df[y_col].astype(int)
+        X, y = df.drop(y_col, axis=1), df[y_col]
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, random_state=42, test_size=0.2)
-        self.numeric_cols = list(set(numeric_features).intersection(df.columns))
-        self.categorical_cols = list(set(categorical_features).intersection(df.columns))
+        self.numeric_cols = list(set(numeric_features).intersection(X.columns))
+        self.categorical_cols = list(set(categorical_features).intersection(X.columns))
 
     def transform_cols(self):
         numeric_transformer = StandardScaler()
@@ -247,7 +248,7 @@ class RegModel:
                                     RandomForestRegressor(random_state=42, n_estimators=50))
         gradient_pipeline = make_pipeline(
             preprocessor,
-            HistGradientBoostingRegressor(random_state=0))
+            GradientBoostingRegressor(random_state=0))
         regressor = make_pipeline(preprocessor,
                                   LinearRegression())
         ridge_reg = RidgeCV([1e-3, 1e-2, 1e-1, 1])
@@ -262,7 +263,15 @@ class RegModel:
         pass
 
     def run(self):
-        self.split_train_test()
         preprocessor, numeric_transformer = self.transform_cols()
-        self.train_pipeline(preprocessor, numeric_transformer)
+        pipelines = self.train_pipeline(preprocessor, numeric_transformer)
+        for estimator in pipelines:
+            estimator.fit(self.X_train, self.y_train)
+            y_pred = estimator.predict(self.X_test)
+            name = estimator[-1].__class__.__name__
+            train_score = estimator.score(self.X_train, self.y_train)  # Returns the coeffof determination R2 of the prediction.
+            test_score = estimator.score(self.X_test, self.y_test)  # r2
+            mse = mean_squared_error(self.y_test, y_pred)
+            # R2 is a normalized version of MSE
+            self.results[name] = {'train_r2': train_score, 'test_r2': test_score, 'mse': mse}
 
