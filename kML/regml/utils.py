@@ -98,4 +98,3 @@ def db_load_column_types(data, title):
                                      ))
     ColumnTypes.objects.bulk_create(iter_data)
 
-

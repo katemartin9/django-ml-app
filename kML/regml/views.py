@@ -1,14 +1,16 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .forms import UploadFileForm, ColumnTypesForm, ColumnsToRemove, DropDownForm
+from .forms import UploadFileForm, ColumnTypesForm, ColumnsToRemove
 from django.contrib.auth.models import User
 from .utils import handle_uploaded_file, db_load_file, db_load_column_types
 from .tables import generate_table
 from .models import RegData
 import dateparser
 import datetime
-from .ml_models import FeatureSelection
+from .ml_models import FeatureSelection, RegModel
+import pandas as pd
+import json
 
 
 # Create your views here.
@@ -82,10 +84,7 @@ def generate_column_types(request, columns, vals):
 def render_graphs(request, title):
     context = dict()
     cl = FeatureSelection(title)
-    default = cl.col_types['int'][0]
-    context['dropdown_form'] = DropDownForm(project_name=title,
-                                            initial={'dropdown': default})
-    context['corr_plot'], context['xy_plot'], context['f_plot'], cols_to_remove = cl.run(default)
+    context['corr_plot'], context['xy_plot'], context['f_plot'], cols_to_remove = cl.run()
     context['forms'] = []
     for idx, col in enumerate(cl.x_cols):
         if col in cols_to_remove:
@@ -95,18 +94,27 @@ def render_graphs(request, title):
             context['forms'].append(ColumnsToRemove(initial={'col_name': col,
                                                              'remove_add': False}, prefix=f'form_{idx}'))
     if request.method == 'POST':
-        # TODO: update the list of columns to remove
+        data = []
+        for i in range(len(context['forms'])):
+            form = ColumnsToRemove(request.POST, prefix=f'form_{i}')
+            if form.is_valid():
+                data.append(form.cleaned_data['col_name']) if form.cleaned_data['remove_add'] else None
+            else:
+                print('Error on form: ', form.errors)
+        request.session['drop_cols'] = data
+        request.session['data'] = cl.df.to_json()
+        request.session['col_types'] = cl.col_types
+        request.session['y'] = cl.y_cols
         return HttpResponseRedirect(reverse('train_models', args=([title])))
-    if request.method == 'GET':
-        selection = request.GET.get('dropdown')
-        if selection:
-            context['xy_plot'] = cl.plot_xy_linearity(selection)
-            context['dropdown_form'] = DropDownForm(project_name=title,
-                                                    initial={'dropdown': selection})
-        return render(request, 'render_graphs.html', context)
     return render(request, 'render_graphs.html', context)
 
 
 def train_models(request, title):
+    train_cols = request.session['drop_cols']
+    data = json.loads(request.session['data'])
+    df = pd.DataFrame.from_dict(data)[train_cols]
+    col_types = request.session['col_types']
+    y = request.session['y']
+    regml = RegModel()
     return render(request, 'train_models.html')
 

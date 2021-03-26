@@ -17,12 +17,7 @@
 <div class="block_container">
     <h2 class="dark-text">FEATURE SELECTION HELPER GRAPHS</h2>
     <div class="float-child">{{ corr_plot | safe }}</div>
-    <div class="float-child">
-        <form method="get">
-       {{ dropdown_form }}
-        {{ xy_plot | safe }}
-            </form>
-    </div>
+    <div class="float-child">{{ xy_plot | safe }}</div>
     <div class="float-child">{{ f_plot | safe }}</div>
 </div>
 

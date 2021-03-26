@@ -1,10 +1,6 @@
-from .models import RegData, ColumnTypes, DataOutput, FileMetaData, Dropdown
+from .models import RegData, ColumnTypes, DataOutput, FileMetaData
 import pandas as pd
-import seaborn as sns
-import math
-import time
-import numpy as np
-from .utils import Container, plot_regression_results
+from .utils import plot_regression_results
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
@@ -17,11 +13,19 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import chi2, f_regression
 from pandas.api.types import is_numeric_dtype
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import plotly.offline as opy
-import plotly.express as px
-import math
+import plotly.io as pio
 import networkx as nx
+
+
+pio.templates["plotly_white_custom"] = pio.templates["plotly_white"]
+pio.templates["plotly_white_custom"]["layout"]["title_font_size"] = 20
+pio.templates["plotly_white_custom"]["layout"]["font_family"] = "Gravitas One"
+pio.templates["plotly_white_custom"]["layout"]["font_color"] = "#2D3949"
+pio.templates["plotly_white_custom"]["layout"]["xaxis"]["tickfont"] = {"size": 14}
+pio.templates["plotly_white_custom"]["layout"]["yaxis"]["tickfont"] = {"size": 14}
+pio.templates["plotly_white_custom"]["layout"]["xaxis"]["title_font"] = {"size": 15}
+pio.templates["plotly_white_custom"]["layout"]["yaxis"]["title_font"] = {"size": 15}
 
 
 class FeatureSelection:
@@ -73,11 +77,6 @@ class FeatureSelection:
             else:
                 self.col_types['int'].append(col)
         self.col_types['int'].extend(self.col_types['n'])
-        existing = Dropdown.objects.filter(project_name=self.title).exists()
-        if existing:
-            Dropdown.objects.filter(project_name=self.title).delete()
-        for c in self.col_types['int']:
-            Dropdown(col_name=c, project_name=FileMetaData.objects.get(project_name=self.title)).save()
 
     def save_corr_matrix(self):
         corr = self.df[self.col_types['int']].corr().reset_index()
@@ -88,36 +87,64 @@ class FeatureSelection:
         # saving corr matrix to plot in java script
         DataOutput(output=pd.melt(corr, id_vars='index').to_dict(orient='records'), output_name='corr_matrix',
                    project_name=FileMetaData.objects.get(project_name=self.title)).save()
-        fig = px.imshow(corr.set_index('index'),
-                        color_continuous_scale=[(0, "#ff9900"), (0.5, 'white'), (1, "#2D3949")],
-                        )
+        corr_new = corr.set_index('index')
+        fig = go.Figure(data=go.Heatmap(
+            x=corr_new.columns,
+            y=corr_new.index,
+            z=corr_new,
+            colorscale=[(0, "#ff9900"), (0.5, 'white'), (1, "#2D3949")]))
         fig.update_layout(showlegend=False, title_text=f"Feature Correlation Matrix",
-                          template="presentation")
+                          template="plotly_white_custom")
         fig.update_yaxes(title=None)
         fig.update_xaxes(tickangle=45)
-        fig.update_layout(
-            font_family="Gravitas One",
-            font_color="#2D3949",
-        )
         return corr, opy.plot(fig, auto_open=False, output_type='div')
 
-    def plot_xy_linearity(self, var):
-        extract_df = self.df[[var, self.y_cols[0]]]
-        normalized_df = (extract_df - extract_df.mean()) / extract_df.std()
-        if normalized_df.shape[0] > 1000:
-            normalized_df = normalized_df.sample(1000)
-        target = self.y_cols[0]
-        fig = px.scatter(normalized_df, x=var, y=target)
-        fig.update_layout(showlegend=False, title_text=f"{var.capitalize()} - Target {target.capitalize()}",
-                          template="presentation")
+    def plot_xy_linearity(self):
+        df = (self.df - self.df.mean()) / self.df.std()
+        df = df[self.col_types['int']].set_index(self.y_cols[0])
+        if df.shape[0] > 1000:
+            df = df.sample(1000)
+        fig = go.Figure()
+
+        # set up ONE trace
+        fig.add_trace(go.Scatter(x=df[df.columns[0]],
+                                 y=df.index,
+                                 visible=True,
+                                 mode='markers')
+                      )
+        fig.update_yaxes(title_text=self.y_cols[0])
+        buttons = []
+        # button with one option for each dataframe
+        for col in df.columns:
+            buttons.append(dict(method='restyle',
+                                label=col,
+                                visible=True,
+                                args=[{'y': [df.index],
+                                       'x': [df[col]],
+                                       'type': 'scatter'}, [0]],
+                                )
+                           )
+
+        # some adjustments to the updatemenus
+        updatemenu = []
+        your_menu = dict()
+        updatemenu.append(your_menu)
+
+        updatemenu[0]['buttons'] = buttons
+        updatemenu[0]['direction'] = 'down'
+        updatemenu[0]['x'] = 1.2
+        updatemenu[0]['y'] = 1.3
+        updatemenu[0]['showactive'] = True
+        # add dropdown menus to the figure
+        fig.update_layout(showlegend=False, updatemenus=updatemenu,
+                          title_text=f"Scatter plot of X & Y",
+                          template="plotly_white_custom"
+                          )
         fig.update_traces(marker=dict(size=5,
                                       line=dict(width=2,
                                                 color='#2D3949')),
-                          selector=dict(mode='markers'))
-        fig.update_layout(
-            font_family="Gravitas One",
-            font_color="#2D3949",
-        )
+                          selector=dict(mode='markers')
+                          )
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def calculate_f_scores(self):
@@ -138,12 +165,8 @@ class FeatureSelection:
         fig.update_traces(marker_color="#ff9900", marker_line_color='#2D3949',
                           marker_line_width=1.5, opacity=0.8)
         fig.update_layout(showlegend=False, title_text=f"Feature F-scores",
-                          template="presentation")
+                          template="plotly_white_custom")
         fig.update_xaxes(tickangle=45)
-        fig.update_layout(
-            font_family="Gravitas One",
-            font_color="#2D3949",
-        )
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def propose_columns_to_remove(self, corr_matrix, corr_thresh=0.6):
@@ -185,9 +208,9 @@ class FeatureSelection:
         # TODO: f_scores
         return cols_to_remove
 
-    def run(self, var):
+    def run(self):
         corr_matrix, div_corr = self.save_corr_matrix()
-        div_lin = self.plot_xy_linearity(var)
+        div_lin = self.plot_xy_linearity()
         div_f = self.calculate_f_scores()
         cols_to_remove = self.propose_columns_to_remove(corr_matrix)
         return div_corr, div_lin, div_f, cols_to_remove
@@ -242,7 +265,4 @@ class RegModel:
         self.split_train_test()
         preprocessor, numeric_transformer = self.transform_cols()
         self.train_pipeline(preprocessor, numeric_transformer)
-
-
-
 
