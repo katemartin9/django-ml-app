@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.template import RequestContext
 from .forms import UploadFileForm, ColumnTypesForm, ColumnsToRemove
 from django.contrib.auth.models import User
 from .utils import handle_uploaded_file, db_load_file, db_load_column_types
@@ -85,6 +86,7 @@ def render_graphs(request, title):
     context = dict()
     cl = FeatureSelection(title)
     context['corr_plot'], context['xy_plot'], context['f_plot'], cols_to_remove = cl.run()
+    context['dist_div'] = cl.plot_distributions()
     context['forms'] = []
     for idx, col in enumerate(cl.x_cols):
         if col in cols_to_remove:

@@ -1,5 +1,8 @@
 from .models import RegData, ColumnTypes, DataOutput, FileMetaData
 import pandas as pd
+import plotly.figure_factory as ff
+from numpy import histogram, linspace
+from scipy.stats.kde import gaussian_kde
 from .utils import plot_regression_results
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.linear_model import LinearRegression, RidgeCV
@@ -99,13 +102,60 @@ class FeatureSelection:
         fig.update_xaxes(tickangle=45)
         return corr, opy.plot(fig, auto_open=False, output_type='div')
 
-    def plot_xy_linearity(self):
+    def plot_distributions(self):
         df = (self.df - self.df.mean()) / self.df.std()
         df = df[self.col_types['int']].set_index(self.y_cols[0])
         if df.shape[0] > 1000:
             df = df.sample(1000)
         fig = go.Figure()
 
+        def get_kde(col, var):
+            fig_temp = ff.create_distplot([df[col]], ['distplot'], curve_type='normal')
+            x = fig_temp['data'][1].x
+            y = fig_temp['data'][1].y
+            if var == 'x':
+                return x
+            elif var == 'y':
+                return y
+
+        fig_temp = ff.create_distplot([df[df.columns[0]]], ['distplot'])
+        fig.add_trace(go.Histogram(x=df[df.columns[0]], visible=True, histnorm='probability density'))
+        fig.add_trace(go.Scatter(x=fig_temp['data'][1].x, y=fig_temp['data'][1].y, visible=True))
+        buttons = []
+        for col in df.columns:
+            buttons.append(dict(method='restyle',
+                                label=col,
+                                visible=True,
+                                args=[{'y': [None, get_kde(col, 'y')],
+                                       'x': [df[col], get_kde(col, 'x')],
+                                       'type': ['histogram', 'scatter']}],
+                                )
+                           )
+
+        updatemenu = []
+        your_menu = dict()
+        updatemenu.append(your_menu)
+
+        updatemenu[0]['buttons'] = buttons
+        updatemenu[0]['direction'] = 'down'
+        updatemenu[0]['x'] = 1.2
+        updatemenu[0]['y'] = 1.3
+        updatemenu[0]['showactive'] = True
+
+        fig.update_layout(showlegend=False, updatemenus=updatemenu,
+                          title_text=f"Distribution",
+                          template="plotly_white"
+                          )
+
+        return opy.plot(fig, auto_open=False, output_type='div')
+
+    def plot_xy_linearity(self):
+        df = (self.df - self.df.mean()) / self.df.std()
+        df = df[self.col_types['int']].set_index(self.y_cols[0])
+        if df.shape[0] > 1000:
+            df = df.sample(1000)
+
+        fig = go.Figure()
         # set up ONE trace
         fig.add_trace(go.Scatter(x=df[df.columns[0]],
                                  y=df.index,

@@ -2,23 +2,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <script src="{% static "regml/graphs.js" %}"></script>
-
+<script src="https://d3js.org/d3.v4.js"></script>
 <head>
     <link rel="stylesheet" href="{% static "regml/style.css" %}">
     <meta charset="UTF-8">
     <title>Data Modelling</title>
 </head>
 <body>
+<!--
 <div class="prevnext_container">
 <a href="#" class="previous">Prev</a>
 <a href="#" class="next">Next</a>
 </div>
+-->
 <div class="main-container" style="display: grid">
 <div class="block_container">
     <h2 class="dark-text">FEATURE SELECTION HELPER GRAPHS</h2>
     <div class="float-child">{{ corr_plot | safe }}</div>
     <div class="float-child">{{ xy_plot | safe }}</div>
     <div class="float-child">{{ f_plot | safe }}</div>
+    <div class="float-child">{{ dist_div | safe }}</div>
 </div>
 
 <div class="block_container">
@@ -48,4 +51,5 @@
 </div>
 </div>
 </body>
+
 </html>
