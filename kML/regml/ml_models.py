@@ -31,6 +31,18 @@ pio.templates["plotly_white_custom"]["layout"]["xaxis"]["title_font"] = {"size":
 pio.templates["plotly_white_custom"]["layout"]["yaxis"]["title_font"] = {"size": 15}
 
 
+def set_up_buttons(buttons):
+    updatemenu = []
+    your_menu = dict()
+    updatemenu.append(your_menu)
+    updatemenu[0]['buttons'] = buttons
+    updatemenu[0]['direction'] = 'down'
+    updatemenu[0]['x'] = 0.05
+    updatemenu[0]['y'] = 1.15
+    updatemenu[0]['showactive'] = True
+    return updatemenu
+
+
 class FeatureSelection:
 
     def __init__(self, title):
@@ -45,6 +57,7 @@ class FeatureSelection:
             'int': []
             }
         self.df = None
+        self.normalised_df = None
         self.build_df()
 
     def retrieve_columns(self):
@@ -80,6 +93,7 @@ class FeatureSelection:
             else:
                 self.col_types['int'].append(col)
         self.col_types['int'].extend(self.col_types['n'])
+        self.normalised_df = (self.df - self.df.mean()) / self.df.std()
 
     def save_corr_matrix(self):
         corr = self.df[self.col_types['int']].corr().reset_index()
@@ -103,14 +117,13 @@ class FeatureSelection:
         return corr, opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_distributions(self):
-        df = (self.df - self.df.mean()) / self.df.std()
-        df = df[self.col_types['int']].set_index(self.y_cols[0])
+        df = self.normalised_df[self.col_types['int']].set_index(self.y_cols[0])
         if df.shape[0] > 1000:
             df = df.sample(1000)
         fig = go.Figure()
 
         def get_kde(col, var):
-            fig_temp = ff.create_distplot([df[col]], ['distplot'], curve_type='normal')
+            fig_temp = ff.create_distplot([df[col]], ['distplot'])  # TODO: check curve_type='normal'
             x = fig_temp['data'][1].x
             y = fig_temp['data'][1].y
             if var == 'x':
@@ -119,8 +132,10 @@ class FeatureSelection:
                 return y
 
         fig_temp = ff.create_distplot([df[df.columns[0]]], ['distplot'])
-        fig.add_trace(go.Histogram(x=df[df.columns[0]], visible=True, histnorm='probability density'))
-        fig.add_trace(go.Scatter(x=fig_temp['data'][1].x, y=fig_temp['data'][1].y, visible=True))
+        fig.add_trace(go.Histogram(x=df[df.columns[0]], visible=True, histnorm='probability density',
+                                   marker_color='#2D3949', opacity=0.75))
+        fig.add_trace(go.Scatter(x=fig_temp['data'][1].x, y=fig_temp['data'][1].y, visible=True,
+                                 marker_color='#ff9900'))
         buttons = []
         for col in df.columns:
             buttons.append(dict(method='restyle',
@@ -132,31 +147,20 @@ class FeatureSelection:
                                 )
                            )
 
-        updatemenu = []
-        your_menu = dict()
-        updatemenu.append(your_menu)
-
-        updatemenu[0]['buttons'] = buttons
-        updatemenu[0]['direction'] = 'down'
-        updatemenu[0]['x'] = 1.2
-        updatemenu[0]['y'] = 1.3
-        updatemenu[0]['showactive'] = True
-
+        updatemenu = set_up_buttons(buttons)
         fig.update_layout(showlegend=False, updatemenus=updatemenu,
                           title_text=f"Distribution",
-                          template="plotly_white"
+                          template="plotly_white_custom",
                           )
 
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_xy_linearity(self):
-        df = (self.df - self.df.mean()) / self.df.std()
-        df = df[self.col_types['int']].set_index(self.y_cols[0])
+        df = self.normalised_df[self.col_types['int']].set_index(self.y_cols[0])
         if df.shape[0] > 1000:
             df = df.sample(1000)
 
         fig = go.Figure()
-        # set up ONE trace
         fig.add_trace(go.Scatter(x=df[df.columns[0]],
                                  y=df.index,
                                  visible=True,
@@ -164,7 +168,6 @@ class FeatureSelection:
                       )
         fig.update_yaxes(title_text=self.y_cols[0])
         buttons = []
-        # button with one option for each dataframe
         for col in df.columns:
             buttons.append(dict(method='restyle',
                                 label=col,
@@ -175,17 +178,7 @@ class FeatureSelection:
                                 )
                            )
 
-        # some adjustments to the updatemenus
-        updatemenu = []
-        your_menu = dict()
-        updatemenu.append(your_menu)
-
-        updatemenu[0]['buttons'] = buttons
-        updatemenu[0]['direction'] = 'down'
-        updatemenu[0]['x'] = 1.2
-        updatemenu[0]['y'] = 1.3
-        updatemenu[0]['showactive'] = True
-        # add dropdown menus to the figure
+        updatemenu = set_up_buttons(buttons)
         fig.update_layout(showlegend=False, updatemenus=updatemenu,
                           title_text=f"Scatter plot of X & Y",
                           template="plotly_white_custom"
