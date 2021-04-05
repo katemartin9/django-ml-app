@@ -20,6 +20,9 @@ import plotly.offline as opy
 import plotly.io as pio
 import networkx as nx
 from collections import defaultdict
+from plotly.subplots import make_subplots
+import time
+import math
 
 pio.templates["plotly_white_custom"] = pio.templates["plotly_white"]
 pio.templates["plotly_white_custom"]["layout"]["title_font_size"] = 20
@@ -284,9 +287,9 @@ class RegModel:
             (numeric_transformer, self.numeric_cols),
             (categorical_transformer, self.categorical_cols),
             remainder='passthrough')
-        return preprocessor, numeric_transformer
+        return preprocessor
 
-    def train_pipeline(self, preprocessor, numeric_transformer):
+    def train_pipeline(self, preprocessor):
         rf_pipeline = make_pipeline(preprocessor,
                                     RandomForestRegressor(random_state=42, n_estimators=50))
         gradient_pipeline = make_pipeline(
@@ -297,24 +300,81 @@ class RegModel:
         ridge_reg = RidgeCV([1e-3, 1e-2, 1e-1, 1])
         poly_reg = PolynomialFeatures(degree=2, include_bias=False)
         poly_pipeline = Pipeline([
+            ('preprocessor', preprocessor),
             ("poly_features", poly_reg),
-            ("std_scaler", numeric_transformer),
             ('regul_reg', ridge_reg)])
         return rf_pipeline, gradient_pipeline, regressor, poly_pipeline
 
     def plot_model_performance(self):
-        pass
+        fig = make_subplots(rows=2, cols=2, subplot_titles=tuple(self.results.keys()))
+        pos = [(1, 1), (1, 2), (2, 1), (2, 2)]
+        for i, res in enumerate(self.results.items()):
+            row, col = pos[i]
+            train_score, test_score, mse, rmse, y_pred, elapsed_time = res[1].values()
+            y_true = self.y_test
+            # scatter plot
+            fig.add_trace(
+                go.Scatter(x=y_true, y=y_pred, mode='markers', marker_color='#2D3949'),
+                row=row, col=col
+            )
+            # trend line
+            fig.add_trace(
+                go.Scatter(x=[y_true.min(), y_true.max()],
+                           y=[y_true.min(), y_true.max()],
+                           line=dict(color='#eb6600', width=2, dash='dot')), row=row, col=col,
+            )
+
+            # box
+            fig.add_shape(
+                type="rect",
+                xref="x domain", yref="y domain",
+                x0=0.07, x1=0.4, y0=0.6, y1=0.95,
+                line=dict(
+                    color="#ff9900",
+                    width=1,
+                ),
+                fillcolor="#ffd89d",
+                row=row,
+                col=col,
+                layer='below'
+            )
+            # text
+            fig.add_annotation(font=dict(size=10),
+                               xref="x domain",
+                               yref="y domain",
+                               x=0.07, y=0.95,
+                               text=f'R^2 train:{train_score:9.2f}<br>R^2 test:{test_score:9.2f}<br>RMSE:{rmse:9.2f}',
+                               row=row,
+                               col=col,
+                               showarrow=False,
+                               align='left'
+                               )
+
+        fig.update_layout(
+            showlegend=False,
+            template="plotly_white_custom"
+        )
+
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+
+        fig.update_layout(title_text="Model Training - Regression Results")
+        return opy.plot(fig, auto_open=False, output_type='div')
 
     def run(self):
-        preprocessor, numeric_transformer = self.transform_cols()
-        pipelines = self.train_pipeline(preprocessor, numeric_transformer)
+        preprocessor = self.transform_cols()
+        pipelines = self.train_pipeline(preprocessor)
         for estimator in pipelines:
+            start_time = time.time()
             estimator.fit(self.X_train, self.y_train)
             y_pred = estimator.predict(self.X_test)
             name = estimator[-1].__class__.__name__
             train_score = estimator.score(self.X_train, self.y_train)  # Returns the coeffof determination R2 of the prediction.
             test_score = estimator.score(self.X_test, self.y_test)  # r2
             mse = mean_squared_error(self.y_test, y_pred)
+            elapsed_time = time.time() - start_time
             # R2 is a normalized version of MSE
-            self.results[name] = {'train_r2': train_score, 'test_r2': test_score, 'mse': mse}
+            self.results[name] = {'train_r2': train_score, 'test_r2': test_score,
+                                  'mse': mse, 'rmse': math.sqrt(mse),
+                                  'y_pred': y_pred, 'elapsed_time': elapsed_time}
 

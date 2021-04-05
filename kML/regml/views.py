@@ -112,6 +112,7 @@ def render_graphs(request, title):
 
 
 def train_models(request, title):
+    context = dict()
     cols_to_drop = request.session['drop_cols']
     data = json.loads(request.session['data'])
     df = pd.DataFrame.from_dict(data)
@@ -120,5 +121,6 @@ def train_models(request, title):
     reg_cl = RegModel()
     reg_cl.split_train_test(df, y, cols_to_drop, col_types['n'], col_types['c'])
     reg_cl.run()
-    return render(request, 'train_models.html')
+    context['model_plot'] = reg_cl.plot_model_performance()
+    return render(request, 'train_models.html', context)
 

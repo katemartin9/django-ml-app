@@ -1,55 +1,44 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<script src="{% static "regml/graphs.js" %}"></script>
-<script src="https://d3js.org/d3.v4.js"></script>
 <head>
     <link rel="stylesheet" href="{% static "regml/style.css" %}">
     <meta charset="UTF-8">
     <title>Data Modelling</title>
 </head>
 <body>
-<!--
-<div class="prevnext_container">
-<a href="#" class="previous">Prev</a>
-<a href="#" class="next">Next</a>
-</div>
--->
-<div class="main-container" style="display: grid">
-<div class="block_container">
-    <h2 class="dark-text">FEATURE SELECTION HELPER GRAPHS</h2>
-    <div class="float-child">{{ corr_plot | safe }}</div>
-    <div class="float-child">{{ xy_plot | safe }}</div>
-    <div class="float-child">{{ f_plot | safe }}</div>
-    <div class="float-child">{{ dist_div | safe }}</div>
-</div>
-
-<div class="block_container">
-<h2 class="dark-text">COLUMNS TO REMOVE</h2>
-
-
-    <ul class="list-group list-group-flush">
-        <h3>Proposing to remove columns based on these four factors:</h3>
-          <li class="list-group-item">Highly correlated features</li>
-          <li class="list-group-item">Have no linear relationship with y</li>
-          <li class="list-group-item">High p-value of the f-scores is not significant (>0.05)</li>
-          <li class="list-group-item">Categorical columns that have too many unique values</li>
-        <li class="list-group-item">Date columns</li>
-    </ul>
-
-    <form method="post">
-    {% for form in forms %}
-        {% csrf_token %}
-        <div class="form-field">
-        {{ form.as_p }}
+ <div class="flexbox">
+        <p class="">
+            <h2 class="dark-text">Feature Selection Step</h2>
+            <h3 class="dark-text">Please take a look at the graphs and make any adjustments</h3>
+            <div id="grid" class="grid-wrapper">
+                <div id="header-image" class="card header hero col-num"
+                     style="padding-right: 40%">
+                    {{ corr_plot | safe }}x
+                </div>
+                <div class="card med">{{ xy_plot | safe }}</div>
+                <div class="card med">{{ f_plot | safe }}</div>
+                <div class="card med">{{ dist_div | safe }}</div>
+                <div class= "card footer med col-num" style="padding-top: 5%">
+                    <h2 class="dark-text">COLUMNS TO REMOVE</h2>
+                    <h3>Proposing to remove columns based on these four factors:</h3>
+                     <ul class="list-group list-group-flush">
+             <li class="list-group-item">Highly correlated</li>
+            <li class="list-group-item">Have no linear relationship with Y</li>
+            <li class="list-group-item">High p-value of the f-scores is not significant (>0.05)</li>
+            <li class="list-group-item">Categorical columns that have too many unique values</li>
+            <li class="list-group-item">Date columns</li></ul>
+                    <form method="post">
+                        {% for form in forms %}
+                        {% csrf_token %}
+                    <div class="form-field">
+                        {{ form.as_p }}</div>
+                        {% endfor %}
+                    <div class="form-field">
+                    <input type="submit" value="OK"></div>
+                    </form>
+                </div>
+            </div>
         </div>
-    {% endfor %}
-    <div class="form-field">
-    <input type="submit" value="OK">
-    </div>
-    </form>
-</div>
-</div>
 </body>
-
 </html>
