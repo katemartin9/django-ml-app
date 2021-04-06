@@ -16,12 +16,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
-with open(os.path.join(BASE_DIR, 'kML/info.txt')) as f:
-    info_settings = f.read().strip().split('\n')
-    key = info_settings[0]
-    username = info_settings[1]
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = key
+SECRET_KEY = 'PLEASE_CHANGE_ME_IN_PRODUCTION'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -84,10 +81,10 @@ WSGI_APPLICATION = 'kML.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'kml',
-        'USER': username,
-        'PASSWORD': '',
-        'HOST': 'localhost',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',
         'PORT': '5432',
     }
 }
