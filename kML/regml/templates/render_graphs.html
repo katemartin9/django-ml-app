@@ -8,10 +8,13 @@
 </head>
 <body>
  <div class="flexbox">
-        <p class="">
-            <h2 class="dark-text">Feature Selection Step</h2>
-            <h3 class="dark-text">Please take a look at the graphs and make any adjustments</h3>
-            <div id="grid" class="grid-wrapper">
+            <h1 class="dark-text">Feature Selection Step</h1>
+            <h2 class="dark-text">Please take a look at the graphs and scroll down</h2>
+            <div class="loading" style="visibility:visible;">
+                <p style="float: left; padding: 70px 0;">Oh dear! I'm still loading</p>
+                <img src="{% static "loading.gif" %}" style="height: 184px; float: left">
+            </div>
+            <div id="grid" class="grid-wrapper" style="display: none">
                 <div id="header-image" class="card header hero col-num"
                      style="padding-right: 40%">
                     {{ corr_plot | safe }}x
@@ -40,5 +43,16 @@
                 </div>
             </div>
         </div>
+<script>
+    let plotCount = 0;
+    while (plotCount < 4) {
+        let allElements = document.getElementsByClassName("plotly-graph-div");
+        plotCount = allElements.length;
+    }
+    let flexBox = document.getElementsByClassName("grid-wrapper")[0];
+    let loadingDiv = document.getElementsByClassName("loading")[0];
+    loadingDiv.remove();
+    flexBox.style.display = "grid";
+</script>
 </body>
 </html>

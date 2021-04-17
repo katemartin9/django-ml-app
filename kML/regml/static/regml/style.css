@@ -3,13 +3,13 @@ body {
     margin: 0;
 }
 
-h2 h4 {
+h1 h2 h4 {
     margin: 50px 0;
     font-weight:normal;
 
 }
 
-h2 h4.dark-text {
+h1 h2 h4.dark-text {
     color: #2D3949;
     margin-left: 1em;
 }

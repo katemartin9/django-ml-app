@@ -28,7 +28,7 @@ def upload_file(request):
             tick = form.cleaned_data.get('tick')
             data = handle_uploaded_file(request.FILES['file'], tick)
             # TODO: check why doesn't throw error when project name exists
-            user = User.objects.get()
+            user = User.objects.get(pk=request.user.id)
             db_load_file(data, title, user)
             return HttpResponseRedirect(reverse('data_preview', args=([title])))
         else:
