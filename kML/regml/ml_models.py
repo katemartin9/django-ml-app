@@ -281,6 +281,7 @@ class RegModel:
         self.categorical_cols = list(set(categorical_features).intersection(X.columns))
 
     def transform_cols(self):
+        #Normalizing the output will not affect shape of 𝑓, so it's generally not necessary.
         numeric_transformer = StandardScaler()
         categorical_transformer = OneHotEncoder(handle_unknown='ignore')
         preprocessor = make_column_transformer(
@@ -303,7 +304,7 @@ class RegModel:
             ('preprocessor', preprocessor),
             ("poly_features", poly_reg),
             ('regul_reg', ridge_reg)])
-        return rf_pipeline, gradient_pipeline, regressor, poly_pipeline
+        return [regressor, rf_pipeline, gradient_pipeline, poly_pipeline]
 
     def plot_model_performance(self):
         fig = make_subplots(rows=2, cols=2, subplot_titles=tuple(self.results.keys()))
@@ -312,6 +313,7 @@ class RegModel:
             row, col = pos[i]
             train_score, test_score, mse, rmse, y_pred, elapsed_time = res[1].values()
             y_true = self.y_test
+            y_pred = y_pred
             # scatter plot
             fig.add_trace(
                 go.Scatter(x=y_true, y=y_pred, mode='markers', marker_color='#2D3949'),
@@ -323,23 +325,25 @@ class RegModel:
                            y=[y_true.min(), y_true.max()],
                            line=dict(color='#eb6600', width=2, dash='dot')), row=row, col=col,
             )
-
+            
             # box
             fig.add_shape(
                 type="rect",
                 xref="x domain", yref="y domain",
-                x0=0.07, x1=0.4, y0=0.6, y1=0.95,
+                x0=0.05, x1=0.3, y0=0.5, y1=0.95,
+                opacity=0.5,
                 line=dict(
                     color="#ff9900",
-                    width=1,
+                    width=1
                 ),
                 fillcolor="#ffd89d",
                 row=row,
                 col=col,
                 layer='below'
             )
+            
             # text
-            fig.add_annotation(font=dict(size=10),
+            fig.add_annotation(font=dict(size=11),
                                xref="x domain",
                                yref="y domain",
                                x=0.07, y=0.95,

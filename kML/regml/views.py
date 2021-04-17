@@ -117,7 +117,7 @@ def train_models(request, title):
     data = json.loads(request.session['data'])
     df = pd.DataFrame.from_dict(data)
     col_types = request.session['col_types']
-    y = request.session['y']
+    y = request.session['y'][0]
     reg_cl = RegModel()
     reg_cl.split_train_test(df, y, cols_to_drop, col_types['n'], col_types['c'])
     reg_cl.run()
