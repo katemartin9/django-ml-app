@@ -14,10 +14,10 @@
                 <p style="float: left; padding: 70px 0;">Oh dear! I'm still loading</p>
                 <img src="{% static "loading.gif" %}" style="height: 184px; float: left">
             </div>
-            <div id="grid" class="grid-wrapper" style="display: none">
+            <div id="grid" class="grid-wrapper" style="visibility: collapse;">
                 <div id="header-image" class="card header hero col-num"
-                     style="padding-right: 40%">
-                    {{ corr_plot | safe }}x
+                     style="padding-right: 100%">
+                    {{ corr_plot | safe }}
                 </div>
                 <div class="card med">{{ xy_plot | safe }}</div>
                 <div class="card med">{{ f_plot | safe }}</div>
@@ -52,7 +52,7 @@
     let flexBox = document.getElementsByClassName("grid-wrapper")[0];
     let loadingDiv = document.getElementsByClassName("loading")[0];
     loadingDiv.remove();
-    flexBox.style.display = "grid";
+    flexBox.style.visibility = "visible";
 </script>
 </body>
 </html>

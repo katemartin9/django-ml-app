@@ -127,13 +127,12 @@ and use spans to define size */
 }
 
 .grid-wrapper {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   grid-template-rows: repeat(auto-fill, minmax(400px, 1fr));
   display: grid;
   height: 130em;
   justify-content: center;
   align-content: end;
-  grid-gap: 7px;
 }
 
 .col-num  {
