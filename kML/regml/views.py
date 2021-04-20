@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.template import RequestContext
 from .forms import UploadFileForm, ColumnTypesForm, ColumnsToRemove
 from django.contrib.auth.models import User
 from .utils import handle_uploaded_file, db_load_file, db_load_column_types

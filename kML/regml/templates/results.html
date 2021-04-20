@@ -12,7 +12,7 @@
     {% autoescape off %}
     {{ table }}
     {% endautoescape %}
-    <form method="post">
+    <form method="post" onsubmit="return countTicks()">
     {% for form in forms %}
         {% csrf_token %}
         <div class="form-field">
@@ -20,9 +20,28 @@
         </div>
     {% endfor %}
     <div class="form-field">
+        <div id="alert-div" style="padding: 5px; margin-left: 5%;">
+        </div>
     <input type="submit" value="OK">
     </div>
+
     </form>
     </font>
     </body>
+<script>
+    function countTicks() {
+        document.getElementById('alert-div').innerHTML = "";
+        let boxes_ticked = document.querySelectorAll('input[type="checkbox"]:checked').length
+        if (boxes_ticked !== 1) {
+            let textnode = document.createTextNode("Please check you ticked only ONE target (Y)!");
+            let alert_div = document.getElementById("alert-div");
+            let container = document.createElement("span");
+                container.appendChild(textnode);
+                container.style.color = "red";
+                alert_div.appendChild(container);
+            return false;
+        }
+        return true;
+    }
+</script>
 </html>
