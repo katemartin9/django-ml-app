@@ -159,6 +159,7 @@ class FeatureSelection:
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_xy_linearity(self):
+        # TODO: plot original data
         df = self.normalised_df[self.col_types['int']].set_index(self.y_cols[0])
         if df.shape[0] > 1000:
             df = df.sample(1000)
@@ -191,6 +192,40 @@ class FeatureSelection:
                                                 color='#2D3949')),
                           selector=dict(mode='markers')
                           )
+        return opy.plot(fig, auto_open=False, output_type='div')
+
+    def plot_categorical_data(self):
+        # TODO: add to the front-end
+        # TODO: add variance number
+        bar_plot_cols = []
+        for col in self.col_types['c']:
+            if self.df[col].nuinique() < 10:
+                bar_plot_cols.append(col)
+
+        df = self.df[bar_plot_cols]
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=df[df.columns[0]].value_counts().index.to_list(),
+                             y=df[df.columns[0]].value_counts().to_list(),
+                             visible=True)
+                      )
+        buttons = []
+        for col in df.columns:
+            buttons.append(dict(method='restyle',
+                                label=col,
+                                visible=True,
+                                args=[{'y': [df[col].value_counts().to_list()],
+                                       'x': [df[col].value_counts().index.to_list()],
+                                       'type': 'bar'}, [0]],
+                                )
+                           )
+
+        updatemenu = set_up_buttons(buttons)
+        fig.update_layout(showlegend=False, updatemenus=updatemenu,
+                          title_text=f"Categorical Features - Bar Chart",
+                          template="plotly_white"
+                          )
+        fig.update_traces(marker_color='#2D3949', marker_line_color='#000000',
+                          marker_line_width=1.5, opacity=0.7)
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def calculate_f_scores(self):
@@ -250,7 +285,7 @@ class FeatureSelection:
                     cols_to_remove.extend(list(g))
         # date columns
         cols_to_remove.extend(self.col_types['d'])
-        # TODO: categorical
+        # TODO: remove columns with low variance and a large number of unique values
         # TODO: f_scores
         return cols_to_remove
 
