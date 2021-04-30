@@ -1,10 +1,6 @@
 from .models import RegData, ColumnTypes, DataOutput, FileMetaData
 import pandas as pd
 import plotly.figure_factory as ff
-from numpy import histogram, linspace
-from scipy.stats.kde import gaussian_kde
-from .utils import plot_regression_results
-from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
@@ -13,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_selection import chi2, f_regression
+from sklearn.feature_selection import f_regression
 from pandas.api.types import is_numeric_dtype
 import plotly.graph_objects as go
 import plotly.offline as opy
@@ -159,7 +155,6 @@ class FeatureSelection:
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_xy_linearity(self):
-        # TODO: plot original data
         df = self.normalised_df[self.col_types['int']].set_index(self.y_cols[0])
         if df.shape[0] > 1000:
             df = df.sample(1000)

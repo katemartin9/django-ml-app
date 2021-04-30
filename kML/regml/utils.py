@@ -13,7 +13,9 @@ class DataFrameImputer:
         """
         self.df = None
 
-    def res(self, X):
+    def res(self, X, threshold=0.6):
+        cols_to_keep = list(X.columns[(X.isnull().sum() / X.shape[0]) < threshold])
+        X = X[cols_to_keep]
         self.df = X.copy()
         for col in X:
             if X[col].dtype == float or X[col].dtype == int:
@@ -23,6 +25,7 @@ class DataFrameImputer:
         return self
 
 
+"""
 class Container:
 
     def __init__(self, *args):
@@ -40,6 +43,7 @@ class Container:
 
     def __repr__(self):
         return f'{self.left}, {self.right}'
+"""
 
 
 def plot_regression_results(ax, y_true, y_pred, scores, name, elapsed_time):
@@ -69,7 +73,6 @@ def plot_regression_results(ax, y_true, y_pred, scores, name, elapsed_time):
 def handle_uploaded_file(f, tick):
     df = pd.read_csv(f)
     df.columns = [x.lower() for x in df.columns]
-    # TODO: if more than 80% of data are null then drop column
     if tick:
         df.dropna(inplace=True)
     else:
