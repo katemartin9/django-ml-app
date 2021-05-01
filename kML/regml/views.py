@@ -11,6 +11,7 @@ import datetime
 from .ml_models import FeatureSelection, RegModel
 import pandas as pd
 import json
+from .build_notebook import build_notebook
 
 
 # Create your views here.
@@ -121,4 +122,6 @@ def train_models(request, title):
     reg_cl.run()
     context['model_plot'] = reg_cl.plot_model_performance()
     return render(request, 'train_models.html', context)
+
+
 

@@ -1,58 +1,27 @@
 import nbformat as nbf
-
-# TODO: export as a zip file with requirements.txt, notebook, data_preprocessing, modelling, plotting, csv
+import zipfile
+import io
 
 
 def build_notebook(filename, y):
-    nb = nbf.v4.new_notebook()
-    nb['cells'] = []
+    nb = nbf.read('template.ipynb', as_version=4)
+    nb['cells'][0]['source'] = 'Replaced text'
+    return nbf.write(nb, 'sample_notebook.ipynb')
 
-    # TEXT
-    heading = """**REGRESSION NOTEBOOK**"""
-    introduction = """This is an interactive environment for you to explore your data."""
-    data_processing = """**PREPROCESSING**"""
-    feature_selection = """**FEATURE SELECTION**"""
-    feature_selection_description = """Feature selection is the process of 
-selecting a subset of the most relevant features which should lead to the best model results."""
 
-    # CODE
-    imports = """import pandas as pd
-from utils import DataFrameImputer
-from notebook_helper import FeatureSelectionCl
-    """
-
-    data_preview = f"""# Let's take a look at the data.
-df = pd.read_csv({filename})
-df.head()"""
-    data_describe = """# The statistics of your dataset
-df.describe()"""
-    data_info = """# These are your data columns
-df.info()
-    """
-
-    imputer = """# Take care of your missing values by calling the built-in imputer, you can specify a threshold.
-df = DataFrameImputer().res(df).df"""
-
-    structure = {heading: 'text',
-                 introduction: 'text',
-                 imports: 'code',
-                 data_processing: 'text',
-                 data_preview: 'code',
-                 data_describe: 'code',
-                 data_info: 'code',
-                 imputer: 'code',
-
-                 feature_selection: 'text', feature_selection_description: 'text'
-                 }
-
-    for name, t in structure.items():
-        if t == 'text':
-            nb['cells'].append(nbf.v4.new_markdown_cell(name))
-        elif t == 'code':
-            nb['cells'].append(nbf.v4.new_code_cell(name))
-
-    nbf.write(nb, 'test2.ipynb')
+def _download_data(*args):
+    req_f = io.StringIO()
+    req_f.write("scikit-learn==0.23.1\nplotly==4.14.3\njupyter==1.0.0")
+    req_f.name = 'requirements.txt'
+    files = ['sample_notebook.ipynb', 'utils.py', 'notebook_helper.py']
+    build_notebook(args[0], args[1])
+    compression = zipfile.ZIP_DEFLATED
+    zf = zipfile.ZipFile("output.zip", mode="w")
+    for f in files:
+        zf.write(f, compress_type=compression)
+    zf.writestr(req_f.name, req_f.getvalue(), compress_type=compression)
+    zf.close()
 
 
 if __name__ == '__main__':
-    build_notebook('datasets/boston_housing.csv', 'charges')
+    _download_data('datasets/boston_housing.csv', 'charges')

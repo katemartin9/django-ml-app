@@ -25,27 +25,6 @@ class DataFrameImputer:
         return self
 
 
-"""
-class Container:
-
-    def __init__(self, *args):
-        self.left = args[0][0]
-        self.right = args[0][1]
-
-    def __eq__(self, other):
-        return set([self.left, self.right]) == set([other.left, other.right])
-
-    def __contains__(self, item):
-        return self.left == item or self.right == item
-
-    def __hash__(self):
-        return hash(self.left) + hash(self.right)
-
-    def __repr__(self):
-        return f'{self.left}, {self.right}'
-"""
-
-
 def plot_regression_results(ax, y_true, y_pred, scores, name, elapsed_time):
     """Scatter plot of the predicted vs true targets."""
     ax.plot([y_true.min(), y_true.max()],
