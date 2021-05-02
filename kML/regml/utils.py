@@ -1,6 +1,18 @@
 import pandas as pd
 from .models import RegData, FileMetaData, ColumnTypes
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
+
+def set_up_buttons(buttons):
+    updatemenu = []
+    your_menu = dict()
+    updatemenu.append(your_menu)
+    updatemenu[0]['buttons'] = buttons
+    updatemenu[0]['direction'] = 'down'
+    updatemenu[0]['x'] = 0.05
+    updatemenu[0]['y'] = 1.15
+    updatemenu[0]['showactive'] = True
+    return updatemenu
 
 
 class DataFrameImputer:
@@ -25,28 +37,62 @@ class DataFrameImputer:
         return self
 
 
-def plot_regression_results(ax, y_true, y_pred, scores, name, elapsed_time):
-    """Scatter plot of the predicted vs true targets."""
-    ax.plot([y_true.min(), y_true.max()],
-            [y_true.min(), y_true.max()],
-            '--r', linewidth=2)
-    ax.scatter(y_true, y_pred, alpha=0.2)
+class PlotTemplate:
 
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-    ax.spines['left'].set_position(('outward', 10))
-    ax.spines['bottom'].set_position(('outward', 10))
-    ax.set_xlim([y_true.min(), y_true.max()])
-    ax.set_ylim([y_true.min(), y_true.max()])
-    ax.set_xlabel('Measured')
-    ax.set_ylabel('Predicted')
-    extra = plt.Rectangle((0, 0), 0, 0, fc="w", fill=False,
-                          edgecolor='none', linewidth=0)
-    ax.legend([extra], [scores], loc='upper left')
-    title = name + '\n Evaluation in {:.2f} seconds'.format(elapsed_time)
-    ax.set_title(title)
+    def __init__(self):
+        self.df = None
+        self.fig_ = None
+
+    def initialize_figure(self):
+        self.fig_ = go.Figure()
+
+    def initialize_scatter(self, col):
+        d = dict(x='self.df[col]',
+                 y='self.df.index'
+                 )
+        self.fig_.add_trace(go.Scatter(x=eval(d['x']),
+                                       y=eval(d['y']),
+                                       visible=True,
+                                       mode='markers'))
+        return d
+
+    def initialize_bar(self, col):
+        d = dict(x='self.df[col].value_counts().index.to_list()',
+                 y='self.df[col].value_counts().to_list()'
+                 )
+        self.fig_.add_trace(go.Bar(x=eval(d['x']),
+                                   y=eval(d['y']),
+                                   visible=True))
+        return d
+
+    def build_dropdown(self, d, t):
+        buttons = []
+        for col in self.df.columns:
+            buttons.append(dict(method='restyle',
+                                label=col,
+                                visible=True,
+                                args=[{'y': [eval(d['y'])],
+                                       'x': [eval(d['x'])],
+                                       'type': t}, [0]],
+                                )
+                           )
+
+        updatemenu = set_up_buttons(buttons)
+        self.fig_.update_layout(showlegend=False,
+                                updatemenus=updatemenu,
+                                template="plotly_white")
+
+    def __call__(self, df, plot_type):
+        self.initialize_figure()
+        self.df = df
+        dd_default = self.df.columns[0]
+        params = {
+            'scatter': self.initialize_scatter,
+            'bar': self.initialize_bar,
+        }
+        plot_init = params[plot_type]
+        d = plot_init(dd_default)
+        self.build_dropdown(d, plot_type)
 
 
 def handle_uploaded_file(f, tick):

@@ -1,14 +1,14 @@
 from .models import RegData, ColumnTypes, DataOutput, FileMetaData
 import pandas as pd
+import numpy as np
 import plotly.figure_factory as ff
 from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures, LabelEncoder
 from sklearn.compose import make_column_transformer
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline, Pipeline
 from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import f_regression
 from pandas.api.types import is_numeric_dtype
 import plotly.graph_objects as go
@@ -19,6 +19,7 @@ from collections import defaultdict
 from plotly.subplots import make_subplots
 import time
 import math
+from .utils import set_up_buttons
 
 pio.templates["plotly_white_custom"] = pio.templates["plotly_white"]
 pio.templates["plotly_white_custom"]["layout"]["title_font_size"] = 20
@@ -28,18 +29,6 @@ pio.templates["plotly_white_custom"]["layout"]["xaxis"]["tickfont"] = {"size": 1
 pio.templates["plotly_white_custom"]["layout"]["yaxis"]["tickfont"] = {"size": 14}
 pio.templates["plotly_white_custom"]["layout"]["xaxis"]["title_font"] = {"size": 15}
 pio.templates["plotly_white_custom"]["layout"]["yaxis"]["title_font"] = {"size": 15}
-
-
-def set_up_buttons(buttons):
-    updatemenu = []
-    your_menu = dict()
-    updatemenu.append(your_menu)
-    updatemenu[0]['buttons'] = buttons
-    updatemenu[0]['direction'] = 'down'
-    updatemenu[0]['x'] = 0.05
-    updatemenu[0]['y'] = 1.15
-    updatemenu[0]['showactive'] = True
-    return updatemenu
 
 
 class FeatureSelection:
@@ -92,7 +81,11 @@ class FeatureSelection:
             else:
                 self.col_types['int'].append(col)
         self.col_types['int'].extend(self.col_types['n'])
-        self.normalised_df = (self.df - self.df.mean()) / self.df.std()
+        self.normalised_df = self.df.copy()
+        ss = StandardScaler()
+        for col in self.col_types['int']:
+            self.normalised_df[col] = ss.fit_transform(np.array(self.df[col]).reshape(-1, 1))
+        print(self.normalised_df.head())
 
     def save_corr_matrix(self):
         corr = self.df[self.col_types['int']].corr().reset_index()
@@ -155,7 +148,7 @@ class FeatureSelection:
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_xy_linearity(self):
-        df = self.normalised_df[self.col_types['int']].set_index(self.y_cols[0])
+        df = self.normalised_df.set_index(self.y_cols[0])
         if df.shape[0] > 1000:
             df = df.sample(1000)
 
