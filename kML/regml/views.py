@@ -11,7 +11,7 @@ import datetime
 from .ml_models import FeatureSelection, RegModel
 import pandas as pd
 import json
-from .build_notebook import build_notebook
+from .build_notebook import _download_data
 
 
 # Create your views here.
@@ -86,6 +86,8 @@ def render_graphs(request, title):
     cl = FeatureSelection(title)
     context['corr_plot'], context['xy_plot'], context['f_plot'], cols_to_remove = cl.run()
     context['dist_div'] = cl.plot_distributions()
+    # Prepare a notebook
+    _download_data(cl.df, cl.y_cols[0])
     context['forms'] = []
     for idx, col in enumerate(cl.x_cols):
         if col in cols_to_remove:

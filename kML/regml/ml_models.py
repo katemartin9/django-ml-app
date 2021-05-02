@@ -19,7 +19,7 @@ from collections import defaultdict
 from plotly.subplots import make_subplots
 import time
 import math
-from .utils import set_up_buttons
+from .utils import PlotTemplate as pt
 
 pio.templates["plotly_white_custom"] = pio.templates["plotly_white"]
 pio.templates["plotly_white_custom"]["layout"]["title_font_size"] = 20
@@ -85,7 +85,6 @@ class FeatureSelection:
         ss = StandardScaler()
         for col in self.col_types['int']:
             self.normalised_df[col] = ss.fit_transform(np.array(self.df[col]).reshape(-1, 1))
-        print(self.normalised_df.head())
 
     def save_corr_matrix(self):
         corr = self.df[self.col_types['int']].corr().reset_index()
@@ -139,7 +138,7 @@ class FeatureSelection:
                                 )
                            )
 
-        updatemenu = set_up_buttons(buttons)
+        updatemenu = pt.set_up_buttons(buttons)
         fig.update_layout(showlegend=False, updatemenus=updatemenu,
                           title_text=f"Distribution",
                           template="plotly_white_custom",
@@ -170,7 +169,7 @@ class FeatureSelection:
                                 )
                            )
 
-        updatemenu = set_up_buttons(buttons)
+        updatemenu = pt.set_up_buttons(buttons)
         fig.update_layout(showlegend=False, updatemenus=updatemenu,
                           title_text=f"Scatter plot of X & Y",
                           template="plotly_white_custom"
@@ -207,7 +206,7 @@ class FeatureSelection:
                                 )
                            )
 
-        updatemenu = set_up_buttons(buttons)
+        updatemenu = pt.set_up_buttons(buttons)
         fig.update_layout(showlegend=False, updatemenus=updatemenu,
                           title_text=f"Categorical Features - Bar Chart",
                           template="plotly_white"

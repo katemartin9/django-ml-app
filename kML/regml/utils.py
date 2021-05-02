@@ -3,18 +3,6 @@ from .models import RegData, FileMetaData, ColumnTypes
 import plotly.graph_objects as go
 
 
-def set_up_buttons(buttons):
-    updatemenu = []
-    your_menu = dict()
-    updatemenu.append(your_menu)
-    updatemenu[0]['buttons'] = buttons
-    updatemenu[0]['direction'] = 'down'
-    updatemenu[0]['x'] = 0.05
-    updatemenu[0]['y'] = 1.15
-    updatemenu[0]['showactive'] = True
-    return updatemenu
-
-
 class DataFrameImputer:
 
     def __init__(self):
@@ -77,10 +65,21 @@ class PlotTemplate:
                                 )
                            )
 
-        updatemenu = set_up_buttons(buttons)
+        updatemenu = self.set_up_buttons(buttons)
         self.fig_.update_layout(showlegend=False,
                                 updatemenus=updatemenu,
                                 template="plotly_white")
+    @staticmethod
+    def set_up_buttons(buttons):
+        updatemenu = []
+        your_menu = dict()
+        updatemenu.append(your_menu)
+        updatemenu[0]['buttons'] = buttons
+        updatemenu[0]['direction'] = 'down'
+        updatemenu[0]['x'] = 0.05
+        updatemenu[0]['y'] = 1.15
+        updatemenu[0]['showactive'] = True
+        return updatemenu
 
     def __call__(self, df, plot_type):
         self.initialize_figure()
@@ -125,4 +124,3 @@ def db_load_column_types(data, title):
                                                                            title)
                                      ))
     ColumnTypes.objects.bulk_create(iter_data)
-
