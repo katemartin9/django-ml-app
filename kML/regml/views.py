@@ -86,8 +86,9 @@ def render_graphs(request, title):
     cl = FeatureSelection(title)
     context['corr_plot'], context['xy_plot'], context['f_plot'], cols_to_remove = cl.run()
     context['dist_div'] = cl.plot_distributions()
+    context['cat_dist'] = cl.plot_categorical_data()
     # Prepare a notebook
-    _download_data(cl.df, cl.y_cols[0])
+    #_download_data(cl.df, cl.y_cols[0])
     context['forms'] = []
     for idx, col in enumerate(cl.x_cols):
         if col in cols_to_remove:

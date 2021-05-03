@@ -108,7 +108,7 @@ class FeatureSelection:
         return corr, opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_distributions(self):
-        df = self.normalised_df[self.col_types['int']].set_index(self.y_cols[0])
+        df = self.normalised_df[self.col_types['int']]
         if df.shape[0] > 1000:
             df = df.sample(1000)
         fig = go.Figure()
@@ -124,7 +124,7 @@ class FeatureSelection:
 
         fig_temp = ff.create_distplot([df[df.columns[0]]], ['distplot'])
         fig.add_trace(go.Histogram(x=df[df.columns[0]], visible=True, histnorm='probability density',
-                                   marker_color='#2D3949', opacity=0.75))
+                                   marker_color='#2D3949', opacity=0.8))
         fig.add_trace(go.Scatter(x=fig_temp['data'][1].x, y=fig_temp['data'][1].y, visible=True,
                                  marker_color='#ff9900'))
         buttons = []
@@ -140,7 +140,7 @@ class FeatureSelection:
 
         updatemenu = pt.set_up_buttons(buttons)
         fig.update_layout(showlegend=False, updatemenus=updatemenu,
-                          title_text=f"Distribution",
+                          title_text=f"Numeric Features - Distribution",
                           template="plotly_white_custom",
                           )
 
@@ -182,11 +182,10 @@ class FeatureSelection:
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def plot_categorical_data(self):
-        # TODO: add to the front-end
         # TODO: add variance number
         bar_plot_cols = []
         for col in self.col_types['c']:
-            if self.df[col].nuinique() < 10:
+            if self.df[col].nunique() < 10:
                 bar_plot_cols.append(col)
 
         df = self.df[bar_plot_cols]
@@ -212,27 +211,29 @@ class FeatureSelection:
                           template="plotly_white"
                           )
         fig.update_traces(marker_color='#2D3949', marker_line_color='#000000',
-                          marker_line_width=1.5, opacity=0.7)
+                          marker_line_width=1.5, opacity=0.8)
         return opy.plot(fig, auto_open=False, output_type='div')
 
     def calculate_f_scores(self):
         label_encoder = LabelEncoder()
+        enc_df = self.df.copy()
         for col in self.col_types['c']:
-            self.df[col] = label_encoder.fit_transform(self.df[col])
-        new_l = self.col_types['n'][:]
-        new_l.extend(self.col_types['c'])
-        y = self.y_cols[0]
-        new_l.remove(y)
-        X = self.df[new_l]
-        y = self.df[y]
-        f_scores = f_regression(X, y, center=True)
-        p_values = pd.Series(f_scores[1], index=X.columns) \
-            .sort_values(ascending=False)
+            enc_df[col] = label_encoder.fit_transform(enc_df[col])
+        y = enc_df[self.y_cols[0]]
+        X = enc_df.drop(self.y_cols[0], axis=1)
 
-        fig = go.Figure([go.Bar(x=p_values.index, y=p_values.values)])
+        f_val, p_val = f_regression(X, y, center=True)
+        scores = pd.DataFrame(zip(np.round(f_val, 2), np.round(p_val, 4)), index=X.columns, columns=['f_val', 'p_val'])\
+            .sort_values(by='f_val', ascending=False)
+
+        fig = go.Figure([go.Bar(x=scores.index, y=scores['f_val'], text=scores['p_val'],
+                                hovertemplate=
+                                '<i>F score</i>: %{y}' +
+                                '<br>P value: %{text}<br>',
+                                )])
         fig.update_traces(marker_color="#ff9900", marker_line_color='#2D3949',
-                          marker_line_width=1.5, opacity=0.8)
-        fig.update_layout(showlegend=False, title_text=f"Feature F-scores",
+                          marker_line_width=1.5, opacity=0.8, textposition='outside')
+        fig.update_layout(showlegend=False, title_text=f"F-scores & P-values",
                           template="plotly_white_custom")
         fig.update_xaxes(tickangle=45)
         return opy.plot(fig, auto_open=False, output_type='div')
