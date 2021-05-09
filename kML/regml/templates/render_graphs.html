@@ -11,7 +11,6 @@
             <h1 class="dark-text">Feature Selection Step</h1>
             <h2 class="dark-text">Please take a look at the graphs and scroll down</h2>
             <div class="loading" style="visibility:visible;">
-                <p style="float: left; padding: 70px 0;">Oh dear! I'm still loading</p>
                 <img src="{% static "loading.gif" %}" style="height: 184px; float: left">
             </div>
             <div id="grid" class="grid-wrapper" style="visibility: collapse;">
@@ -22,13 +21,12 @@
                 <div class="card med">{{ xy_plot | safe }}</div>
                 <div class="card med">{{ f_plot | safe }}</div>
                 <div class="card med">{{ dist_div | safe }}</div>
-                <div class="card med">{{ cat_dist | safe }}</div>
+                <div class="card med" id="category">{{ cat_dist | safe }}</div>
                 <div class= "card footer med col-num" style="padding-top: 5%">
                     <h2 class="dark-text">COLUMNS TO REMOVE</h2>
                     <h3>Proposing to remove columns based on these four factors:</h3>
                      <ul class="list-group list-group-flush">
              <li class="list-group-item">Highly correlated</li>
-            <li class="list-group-item">Have no linear relationship with Y</li>
             <li class="list-group-item">High p-value of the f-scores is not significant (>0.05)</li>
             <li class="list-group-item">Categorical columns that have too many unique values</li>
             <li class="list-group-item">Date columns</li></ul>
@@ -52,8 +50,13 @@
     }
     let flexBox = document.getElementsByClassName("grid-wrapper")[0];
     let loadingDiv = document.getElementsByClassName("loading")[0];
+    let catDiv = document.getElementById('category')
+    if (catDiv.innerHTML.trim() === "") {
+        catDiv.remove()
+    }
     loadingDiv.remove();
     flexBox.style.visibility = "visible";
+
 </script>
 </body>
 </html>

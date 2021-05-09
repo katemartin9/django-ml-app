@@ -184,6 +184,8 @@ class FeatureSelection:
     def plot_categorical_data(self):
         # TODO: add variance number
         bar_plot_cols = []
+        if len(self.col_types['c']) == 0:
+            return ""
         for col in self.col_types['c']:
             if self.df[col].nunique() < 10:
                 bar_plot_cols.append(col)
