@@ -84,14 +84,14 @@ def generate_column_types(request, columns, vals):
 def render_graphs(request, title):
     context = dict()
     cl = FeatureSelection(title)
-    context['corr_plot'], context['xy_plot'], context['f_plot'], cols_to_remove = cl.run()
+    context['corr_plot'], context['xy_plot'], context['f_plot'] = cl.run()
     context['dist_div'] = cl.plot_distributions()
     context['cat_dist'] = cl.plot_categorical_data()
     # Prepare a notebook
-    #_download_data(cl.df, cl.y_cols[0])
+    _download_data(cl.df, cl.y_cols[0])
     context['forms'] = []
     for idx, col in enumerate(cl.x_cols):
-        if col in cols_to_remove:
+        if col in cl.cols_to_remove:
             context['forms'].append(ColumnsToRemove(initial={'col_name': col,
                                                              'remove_add': True}, prefix=f'form_{idx}'))
         else:

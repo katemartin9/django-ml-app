@@ -47,6 +47,7 @@ class FeatureSelection:
         self.df = None
         self.normalised_df = None
         self.build_df()
+        self.cols_to_remove = []
 
     def retrieve_columns(self):
         for row in ColumnTypes.objects.all().filter(project_name=self.title):
@@ -189,7 +190,8 @@ class FeatureSelection:
         for col in self.col_types['c']:
             if self.df[col].nunique() < 10:
                 bar_plot_cols.append(col)
-
+            else:
+                self.cols_to_remove.extend(col)
         df = self.df[bar_plot_cols]
         fig = go.Figure()
         fig.add_trace(go.Bar(x=df[df.columns[0]].value_counts().index.to_list(),
@@ -222,8 +224,7 @@ class FeatureSelection:
         for col in self.col_types['c']:
             enc_df[col] = label_encoder.fit_transform(enc_df[col])
         y = enc_df[self.y_cols[0]]
-        X = enc_df.drop(self.y_cols[0], axis=1)
-
+        X = enc_df.drop(self.y_cols[0], axis=1).drop(self.col_types['d'], axis=1)
         f_val, p_val = f_regression(X, y, center=True)
         scores = pd.DataFrame(zip(np.round(f_val, 2), np.round(p_val, 4)), index=X.columns, columns=['f_val', 'p_val'])\
             .sort_values(by='f_val', ascending=False)
@@ -248,7 +249,6 @@ class FeatureSelection:
             - categorical columns that have too many unique values
             - high p-value of the f-scores is not significant (>0.05)
         """
-        cols_to_remove = []
         # corr part
         corr_matrix = pd.melt(corr_matrix, id_vars='index')
         corr_matrix['value'] = corr_matrix['value'].abs()
@@ -268,23 +268,21 @@ class FeatureSelection:
                     rm_val = corr_matrix[(corr_matrix['index'] == self.y_cols[0]) &
                                 (corr_matrix['variable'].isin(g))]\
                         .sort_values(by='value').iloc[0].variable
-                    cols_to_remove.append(rm_val)
+                    self.cols_to_remove.extend(rm_val)
                 else:
                     g_scores = {k: v for k, v in scores.items() if k in g}
                     g.remove(max(g_scores, key=g_scores.get))
-                    cols_to_remove.extend(list(g))
+                    self.cols_to_remove.extend(list(g))
         # date columns
-        cols_to_remove.extend(self.col_types['d'])
-        # TODO: remove columns with low variance and a large number of unique values
-        # TODO: f_scores
-        return cols_to_remove
+        self.cols_to_remove.extend(self.col_types['d'])
 
     def run(self):
         corr_matrix, div_corr = self.save_corr_matrix()
         div_lin = self.plot_xy_linearity()
+        print('Here')
         div_f = self.calculate_f_scores()
-        cols_to_remove = self.propose_columns_to_remove(corr_matrix)
-        return div_corr, div_lin, div_f, cols_to_remove
+        self.propose_columns_to_remove(corr_matrix)
+        return div_corr, div_lin, div_f
 
 
 class RegModel:
