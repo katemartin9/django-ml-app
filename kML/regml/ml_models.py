@@ -279,7 +279,6 @@ class FeatureSelection:
     def run(self):
         corr_matrix, div_corr = self.save_corr_matrix()
         div_lin = self.plot_xy_linearity()
-        print('Here')
         div_f = self.calculate_f_scores()
         self.propose_columns_to_remove(corr_matrix)
         return div_corr, div_lin, div_f
